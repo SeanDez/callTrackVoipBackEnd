@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars */
+// eslint-disable-next-line no-unused-vars
 import { Router, Request, Response } from 'express';
 
 const router: Router = Router();

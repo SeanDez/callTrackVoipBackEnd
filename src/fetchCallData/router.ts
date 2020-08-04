@@ -1,6 +1,6 @@
 import 'es6-promise';
 import 'isomorphic-fetch';
-/* eslint-disable no-unused-vars */
+// eslint-disable-next-line no-unused-vars
 import { Router, Request, Response } from 'express';
 import moment from 'moment';
 
