@@ -1,24 +1,22 @@
 // eslint-disable-next-line no-unused-vars
 import { Router, Request, Response } from 'express';
 import { Client as PGClient } from 'pg';
-import { queryAllNumbersForCampaignData } from './queryAllNumbers';
+import queryAllNumbersForCampaignData from './queryAllNumbers';
 
-// query each phone number for a record
-// enhance original record with aggregate data
-
-// reshuffle the same records to be in an array
-// this should be done during the first api call
-// break it out to another function, an aggregate function
+interface QueryResultShape {
+  'number.number': string,
+  'campaign.name': string,
+  'campaign.status': string
+}
 
 async function fetchAllCampaignDataForOneUser(req: Request, res: Response) {
   const { userName } = req.body;
   const postgres = new PGClient();
   try {
     await postgres.connect();
-    const response = await postgres.query(queryAllNumbersForCampaignData(userName));
-    if (response.ok) {
-      res.json(response.json());
-    }
+    const result = await postgres.query(queryAllNumbersForCampaignData(userName));
+    const queryData = (result.rows as Array<QueryResultShape>);
+    res.json(queryData);
 
     throw new Error('incomplete response during queryAllNumbersForCampaignData()');
   } catch (error) {
