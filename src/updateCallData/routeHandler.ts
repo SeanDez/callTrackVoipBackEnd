@@ -21,7 +21,7 @@ interface userIdQueryResult {
 async function updateCampaign(req: Request, res: Response) {
   // get userId
   const {
-    userName, columnName, newValue, andClauses,
+    userName, columnName, newValue,
   }: UpdateBodyParams = req.body;
 
   const pgPool = new PGPool();
