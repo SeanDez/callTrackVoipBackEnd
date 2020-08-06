@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import updateCampaign from './routeHandler';
+import updateCampaign from './routeHandlerCallback';
 
 const router = Router();
 router.post('/update/campaign', updateCampaign);

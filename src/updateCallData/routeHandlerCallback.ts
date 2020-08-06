@@ -10,8 +10,7 @@ import UpdateableColumns from './updateableColumnsEnum';
 interface UpdateBodyParams {
   userName: string,
   columnName: UpdateableColumns,
-  newValue: string,
-  andClauses?: string,
+  newValue: string
 }
 
 interface userIdQueryResult {
