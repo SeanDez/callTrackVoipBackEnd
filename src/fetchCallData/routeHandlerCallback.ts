@@ -10,6 +10,7 @@ interface VoipMsProperties {
   yearsBack: string
 }
 
+// eslint-disable-next-line
 async function fetchCallData(req: Request, res: Response) {
   const { userName, apiPassword, yearsBack }
   : VoipMsProperties = req.body;
@@ -32,9 +33,10 @@ async function fetchCallData(req: Request, res: Response) {
 
     if (response.ok) {
       const jsonData = await response.json();
-
-      res.status(200).json(jsonData);
+      return res.status(200).json(jsonData);
     }
+
+    throw new Error('fetchCallData, response.ok was falsy');
   } catch (error) {
     throw new Error(error);
   }

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import fetchCallData from './routeHandlerCallBack';
+import fetchCallData from './routeHandlerCallback';
 
 const router: Router = Router();
 
