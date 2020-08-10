@@ -18,5 +18,6 @@ module.exports = {
     'import/extensions': 0,
     'import/no-unresolved': 0,
     'no-unused-vars': 0,
+    camelcase: 0,
   },
 };

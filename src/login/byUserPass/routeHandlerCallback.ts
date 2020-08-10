@@ -11,23 +11,19 @@ ON app_user.id = campaign.app_user_id
 WHERE app_user.id = $1::text
 `;
 
-interface JoinedUserCampaign {
-  name: string,
-  number: string,
-  status: CampaignStatus
+interface UserShape {
+  id: string,
+  user_name: string,
 }
 
 /*
-  get all campaign data for this account
-  req now has req.user
+  Authentication has already passed. req.user is populated
+  Send back req.user
 */
-async function getCampaignData(req: Request, res: Response) {
-  const pgClient = new PgClient();
-  try {
-    await pgClient.connect();
-  } catch (error) {
-    throw new Error(error);
-  }
+async function respondWithUserData(req: Request, res: Response) {
+  const userData = req.user as UserShape;
+
+  res.json(userData);
 }
 
-export default getCampaignData;
+export default respondWithUserData;

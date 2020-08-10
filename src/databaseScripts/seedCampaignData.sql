@@ -1,3 +1,9 @@
+-- local command
+-- psql -h localhost -U "{username}" -d "{dataBase}" -a -f {fullFilePath}
+
+-- remote command
+-- psql -h {host} -U "{username}" -d "{dataBase}" -a -f {fullFilePath}
+
 INSERT INTO "campaign" (name, status, number, app_user_id) VALUES
 ('campaign01', 'active', '01234567890', 2), 
 (null, 'archived', '460482p5479', 1), 
