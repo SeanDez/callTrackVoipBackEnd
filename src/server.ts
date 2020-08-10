@@ -25,14 +25,14 @@ const server = express();
 // });
 
 passport.serializeUser((user: any, callback) => {
-  callback(null, user.id);
+  callback(null, user.id as string);
 });
 
-passport.deserializeUser(async (userId, callback) => {
+passport.deserializeUser(async (userId: string, callback) => {
   const pgClient = new PgClient();
   try {
     pgClient.connect();
-    const userRecord = (await pgClient.query('SELECT * FROM app_user WHERE id = $1::text', [userId])).rows[0];
+    const userRecord = (await pgClient.query('SELECT * FROM app_user WHERE CAST(id as text) = CAST($1 as text)', [userId])).rows[0];
     pgClient.end();
     callback(null, userRecord);
   } catch (error) {
