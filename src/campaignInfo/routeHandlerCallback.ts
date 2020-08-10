@@ -15,6 +15,8 @@ async function fetchAllCampaignDataForOneUser(req: Request, res: Response) {
   try {
     await postgres.connect();
     const result = await postgres.query(queryAllNumbersForCampaignData(userName));
+    postgres.end();
+
     const queryData = (result.rows as Array<QueryResultShape>);
     res.json(queryData);
 

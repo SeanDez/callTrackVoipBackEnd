@@ -1,6 +1,16 @@
-INSERT INTO "campaign" (name, status, number_id) VALUES
-('campaign01', 'active', 2), ('campaign02', 'archived', 3), ('campaign03', 'inactive', 4), 
-('campaign04', 'active', 5), ('campaign05', 'archived', 6), ('campaign06', 'inactive', 7), 
-('campaign07', 'active', 8), ('campaign08', 'archived', 9), ('campaign09', 'inactive', 10), 
-('campaign010', 'active', 11), ('campaign11', 'archived', 12), ('campaign12', 'inactive', 13), 
-('campaign013', 'active', 14), ('campaign14', 'archived', 15), ('campaign15', 'inactive', 1);
+INSERT INTO "campaign" (name, status, number, app_user_id) VALUES
+('campaign01', 'active', '01234567890', 2), 
+(null, 'archived', '460482p5479', 1), 
+('campaign03', 'inactive', '17027741094', 2), 
+('campaign04', 'active', '91465657932', 1), 
+(null, null, '66986267061', 2), 
+('campaign06', 'inactive', '88222119025', 1), 
+(null, null, '59450020589', 2), 
+('campaign08', 'archived', '18078275191', 1), 
+('campaign09', 'inactive', '97972202532', 1), 
+('campaign010', null, '23710041749', 1), 
+('campaign11', null, '87298163647', 2), 
+('campaign12', 'inactive', '42457843647', 1), 
+('campaign013', 'active', '56523849483', 1), 
+('campaign14', 'archived', '37732243325', 1), 
+('campaign15', 'inactive', '93418635266', 1);

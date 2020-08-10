@@ -13,12 +13,7 @@ const server = express();
 server
   .use(cors())
   .use(express.json()) // populates req.body
-  .use(passport.initialize());
-
-// eslint-disable-next-line import/prefer-default-export
-export { passport };
-
-server
+  .use(passport.initialize())
   .use(rootRouter)
   .use(fetchCallDataRouter);
 
