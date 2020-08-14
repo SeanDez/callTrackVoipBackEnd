@@ -1,12 +1,8 @@
-export default (userName: string) => `SELECT number.number, campaign.name, campaign.status
-
+export default (userName: string) => `SELECT campaign.number, campaign.name, campaign.status
 FROM user
 
-LEFT JOIN number
-ON user.id = number.userId
-
 LEFT JOIN campaign
-ON campaign.id = number.campaignId
+ON user.id = campaign.userId
 
 WHERE userName = ${userName}
 `;

@@ -8,7 +8,7 @@ FROM app_user
 LEFT JOIN campaign
 ON app_user.id = campaign.app_user_id
 
-WHERE app_user.id = $1::text
+WHERE CAST(app_user.id as varchar(20)) = CAST($1 as varchar(20));
 `;
 
 interface UserShape {

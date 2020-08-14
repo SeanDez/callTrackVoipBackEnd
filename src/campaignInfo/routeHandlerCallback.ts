@@ -4,9 +4,9 @@ import { Client as PGClient } from 'pg';
 import queryAllNumbersForCampaignData from './queryAllNumbers';
 
 interface QueryResultShape {
-  'number.number': string,
-  'campaign.name': string,
-  'campaign.status': string
+  'number': string,
+  'name': string,
+  'status': string
 }
 
 async function fetchAllCampaignDataForOneUser(req: Request, res: Response) {
