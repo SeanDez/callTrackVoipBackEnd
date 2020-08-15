@@ -1,4 +1,4 @@
-export default (userName: string) => `SELECT id 
-FROM user
-WHERE userName = ${userName}
+export default `SELECT id 
+FROM app_user
+WHERE userName = $1
 `;

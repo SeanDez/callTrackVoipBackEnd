@@ -19,3 +19,14 @@ CREATE TABLE IF NOT EXISTS "campaign" (
   "number" VARCHAR(11) not null,
   "app_user_id" INTEGER REFERENCES "app_user" (id) on delete cascade
 );
+
+CREATE TABLE IF NOT EXISTS "calls" (
+  "uniqueId" INTEGER not null primary key,
+  "destination" VARCHAR(11),
+  "callerID" VARCHAR(11),
+  "description" VARCHAR(80),
+  "account" VARCHAR(10),
+  "disposition" VARCHAR(20),
+  "seconds" SMALLINT,
+  "campaign_id" INTEGER REFERENCES "campaign" (id) on delete cascade
+)

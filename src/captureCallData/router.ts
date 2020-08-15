@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import fetchCallData from './routeHandlerCallback';
+import captureCallData from './function';
 
 const router: Router = Router();
 
-router.post('/callData', fetchCallData);
+router.post('/callData', captureCallData);
 
 export default router;

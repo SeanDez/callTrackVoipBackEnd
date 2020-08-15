@@ -7,7 +7,7 @@ import { Client as PgClient } from 'pg';
 import userPassLoginRouter from './login/byUserPass/router';
 
 import rootRouter from './rootRoute/router';
-import fetchCallDataRouter from './fetchCallData/router';
+import fetchCallDataRouter from './captureCallData/router';
 
 require('dotenv').config();
 
