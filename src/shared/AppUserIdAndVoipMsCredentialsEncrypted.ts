@@ -1,0 +1,5 @@
+export interface AppUserIdAndVoipMsCredentialsEncrypted {
+  id: string;
+  voipms_user_email: string;
+  voipms_password_encrypted: string;
+}

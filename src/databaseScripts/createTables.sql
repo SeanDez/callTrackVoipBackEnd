@@ -13,20 +13,19 @@ CREATE TABLE IF NOT EXISTS "app_user" (
 );
 
 CREATE TABLE IF NOT EXISTS "campaign" (
-  "id" SERIAL primary key,
+  "phoneNumber" INTEGER not null primary key,
   "name" VARCHAR(100),
   "status" VARCHAR(30),
-  "number" VARCHAR(11) not null,
   "app_user_id" INTEGER REFERENCES "app_user" (id) on delete cascade
 );
 
-CREATE TABLE IF NOT EXISTS "calls" (
+CREATE TABLE IF NOT EXISTS "call" (
   "uniqueId" INTEGER not null primary key,
-  "destination" VARCHAR(11),
-  "callerID" VARCHAR(11),
+  "callerId" VARCHAR(11),
+  "date" DATE,
   "description" VARCHAR(80),
   "account" VARCHAR(10),
   "disposition" VARCHAR(20),
   "seconds" SMALLINT,
-  "campaign_id" INTEGER REFERENCES "campaign" (id) on delete cascade
+  "campaign_phoneNumber" INTEGER REFERENCES "campaign" (phoneNumber) on delete cascade
 )

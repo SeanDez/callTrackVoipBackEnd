@@ -7,8 +7,6 @@ const pgPromise = PGPromise({
   capSQL: true,
 });
 
-
-
 // 9:34am, 22nd of every 3rd month
 const every12Hours = '* */12 * * *';
 

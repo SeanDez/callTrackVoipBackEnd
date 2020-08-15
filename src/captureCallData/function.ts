@@ -2,10 +2,16 @@ import 'es6-promise';
 import 'isomorphic-fetch';
 // eslint-disable-next-line no-unused-vars
 import { Request, Response } from 'express';
-import { Client as PGClient, QueryResult } from 'pg';
 import moment from 'moment';
-import getUserIDQuery from '../shared/getUserIdQuery';
 import PGPromise from 'pg-promise';
+import dotenv from 'dotenv';
+import lodash from 'lodash';
+
+const PGPromiseOptions = PGPromise({
+  capSQL: true,
+});
+
+dotenv.config();
 
 interface VoipMsProperties {
   userName: string;
@@ -28,8 +34,9 @@ interface CallData {
     ip: string; // "";
 }
 
-type requiredFields = 'date' | 'callerid' | 'destination' | 'description' | 'account' | 'disposition' | 'seconds' | 'uniqueid';
-type SaveableCallRecordFields = Pick<CallData, requiredFields>;
+type SaveableCallRecordFields = {
+
+};
 
 function formatCallRecordsForPGPromise(calldata: CallData[]): SaveableCallRecordFields[] {
   const formattedData = calldata.map((record: CallData) => {
@@ -38,17 +45,23 @@ function formatCallRecordsForPGPromise(calldata: CallData[]): SaveableCallRecord
     } = record;
 
     return {
-      callerid,
-      destination,
+      uniqueId: PGPromise.as.number(Number(uniqueid)),
+      callerId: callerid,
+      date: PGPromise.as.date(new Date(date)),
       description,
       account,
       disposition,
-      date: PGPromise.as.date(new Date(date)),
       seconds: PGPromise.as.number(Number(seconds)),
-      uniqueid: PGPromise.as.number(Number(uniqueid)),
+      campaign_phoneNumber: PGPromise.as.number(Number(destination)),
     };
   });
   return formattedData;
+}
+
+function extractDestinationPhoneNumbers(callData: CallData[]) {
+  const allPhoneNumbers = callData.map((record: CallData) => record.destination);
+  const uniqueNumbers = lodash.uniq(allPhoneNumbers);
+  return uniqueNumbers;
 }
 
 const multiInsertNewCampaigns = 'INSERT INTO campaign (number, app_user_id) VALUES %L';
@@ -94,29 +107,71 @@ async function captureCallData(input: VoipMsProperties | Request, res?: Response
       method: 'get',
     });
 
+    const callData: CallData[] = await response.json();
+
     // todo save to database
     // create new campaigns first (new numbers)
     // add call data next
+    // todo pass connection details
+    const pgPromiseConfiged = PGPromiseOptions({
+      host: process.env.PGHOST,
+      port: Number(process.env.PGPORT),
+      database: process.env.PGDATABASE,
+      user: process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+    });
 
-    const callData: CallData[] = await response.json();
+    const userId: string = await pgPromiseConfiged.one(
+      'SELECT id FROM app_user WHERE user_name = $1',
+      [userName],
+      (record: any) => record.id,
+    );
+
+    // todo insert campaigns (if no phone number found)
+    const uniqueNumbers = extractDestinationPhoneNumbers(callData);
+    const campaignData = uniqueNumbers.map((phoneNumber: string) => ({
+      phoneNumber: PGPromiseOptions.as.number(Number(phoneNumber)),
+      status: 'active',
+      app_user_id: userId,
+    }));
+    const campaignColumns = ['phoneNumber', 'status', 'app_user_id'];
+    const campaignTable = { table: 'campaign' };
+    const multiInsertString = PGPromiseOptions.helpers.insert(
+      campaignData, campaignColumns, campaignTable,
+    );
+    const campaignQueryWithNoConflicts = `${multiInsertString} ON CONFLICT DO NOTHING`;
+    await pgPromiseConfiged.none(campaignQueryWithNoConflicts);
+
     // save the call data to database
+    // define columns and table
+    const callDataFormattedForInsert = formatCallRecordsForPGPromise(callData);
+    const callColumns = new PGPromiseOptions.helpers.ColumnSet(['uniqueId', 'callerId', 'date', 'description', 'account', 'disposition', 'seconds', 'campaign_phoneNumber']);
+    const callTable = 'call';
+    const callMultiInsertQuery = PGPromiseOptions.helpers.insert(
+      callDataFormattedForInsert, callColumns, callTable,
+    );
+    await pgPromiseConfiged.none(callMultiInsertQuery);
 
-    const pgClient = new PGClient();
-    pgClient.connect()
-    const uIDQueryResult = await pgClient.query(getUserIDQuery, [userName]);
-    const userId = uIDQueryResult.rows[0].id;
+    // todo multi insert
+    // figure out what info is needed for each table insert
+    // ANSWER: USER ID ONLY
+    // table campaign
+      // insert if not exists: campaign.phoneNumber = number
+      // status: active
+      // app_user_id = id
 
-    await pgClient.query(multiInsertQuery);
+    // calls campaign
+      // insert if not exists: uniqueId = uniqueid (lowercase i)
+      // {...recordData}
 
-    pgClient.end();
 
     // if there's a response object, then send a response
     if (res) {
       if (response.ok) {
         res.status(204).send();
+      } else {
+        throw new Error('fetchCallData, response.ok was falsy');
       }
-
-      throw new Error('fetchCallData, response.ok was falsy');
     }
   } catch (error) {
     throw new Error(error);
