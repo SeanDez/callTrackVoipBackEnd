@@ -8,7 +8,7 @@ dotenv.config();
 
 const cryptr = new Cryptor(process.env.CRYPTR_SECRET!);
 
-const selectAllVoipMsUsersInfo = 'SELECT id, voipms_user_email, voipms_password_encrypted FROM app_user';
+const selectAllVoipMsUsersInfo = 'SELECT id, user_name, voipms_user_email, voipms_password_encrypted FROM app_user';
 
 async function getAllVoipMsUsersAndLoginData()
   : Promise<Array<IVoipUserLoginsDecrypted> | null> {
@@ -21,11 +21,14 @@ async function getAllVoipMsUsersAndLoginData()
     if (queryresult.rows.length > 0) {
       const guardedData = queryresult.rows;
 
-      const decryptedLogins = guardedData.map((record: AppUserIdAndVoipMsCredentialsEncrypted) => ({
-        id: record.id,
-        voip_userName: record.voipms_user_email,
-        voip_password: cryptr.decrypt(record.voipms_password_encrypted),
-      }));
+      const decryptedLogins: IVoipUserLoginsDecrypted[] = guardedData.map(
+        (record: AppUserIdAndVoipMsCredentialsEncrypted) => ({
+          id: record.id,
+          user_name: record.user_name,
+          voip_userName: record.voipms_user_email,
+          voip_password: cryptr.decrypt(record.voipms_password_encrypted),
+        }),
+      );
 
       return Promise.resolve(decryptedLogins);
     }

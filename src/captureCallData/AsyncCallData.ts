@@ -15,31 +15,35 @@ import { CallRecord } from './interfaces/CallRecord';
 
 dotenv.config();
 
-export default class AsyncCallData {
-  private userId: string = ''; // properly initialized with this.initializeAsyncValues()
+type PGPromiseConnection = ReturnType<ReturnType<typeof PGPromise>>;
 
+export default class AsyncCallData {
   private userName: string;
 
   private pgPromiseOptions: ReturnType<typeof PGPromise>;
 
   constructor(
     input: VoipMsProperties | Request,
-    private pgPromiseConfigured: ReturnType<ReturnType<typeof PGPromise>>,
+    private pgPromiseConfigured: PGPromiseConnection,
+    private userId?: string | undefined,
   ) {
     this.pgPromiseOptions = PGPromise({
       capSQL: true,
     });
-    this.pgPromiseConfigured = pgPromiseConfigured;
     this.userName = setUserName(input);
   }
 
   // --------------- Public Methods
 
   public async initializeAsyncValues() {
-    this.userId = await this.setUserID();
+    if (typeof this.userId === 'undefined') {
+      this.userId = await this.setUserID();
+    }
   }
 
   public async captureCallData(input: VoipMsProperties | Request, res?: Response): Promise<void> {
+    const dbConnection = await this.pgPromiseConfigured.connect();
+
     const callData: CallRecord[] = await this.fetchCallData(input, res);
 
     await this.insertNewCampaignsIfNoMatchingPhoneNumber(
@@ -47,6 +51,8 @@ export default class AsyncCallData {
     );
 
     await saveNewCallRecords(this.pgPromiseConfigured, callData);
+
+    await dbConnection.done();
   }
 
   // --------------- Internal Methods
