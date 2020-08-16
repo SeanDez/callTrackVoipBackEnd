@@ -6,10 +6,7 @@ import moment from 'moment';
 import PGPromise from 'pg-promise';
 import dotenv from 'dotenv';
 import lodash from 'lodash';
-
-const PGPromiseOptions = PGPromise({
-  capSQL: true,
-});
+import { PGPromiseOptions } from '../shared/databaseConfig';
 
 dotenv.config();
 
@@ -18,7 +15,7 @@ interface VoipMsProperties {
   apiPassword: string;
 }
 
-interface CallData {
+interface CallRecord {
     date: string; // "2020-08-11 11:43:12";
     callerid: string; // "8335951058";
     destination: string; // "9093455007";
@@ -34,12 +31,35 @@ interface CallData {
     ip: string; // "";
 }
 
-type SaveableCallRecordFields = {
+interface SaveableCallRecordFields {
+  uniqueId: string,
+  callerId: string,
+  date: string,
+  description: string,
+  account: string,
+  disposition: string,
+  seconds: string,
+  campaign_phoneNumber: string
+}
 
-};
+function isRequest(input: VoipMsProperties | Request): input is Request {
+  return (input as Request).body !== 'undefined';
+}
 
-function formatCallRecordsForPGPromise(calldata: CallData[]): SaveableCallRecordFields[] {
-  const formattedData = calldata.map((record: CallData) => {
+function setUserName(input: VoipMsProperties | Request) {
+  let userName: string;
+
+  if (isRequest(input)) {
+    userName = input.body.userName;
+  } else {
+    userName = input.userName;
+  }
+
+  return userName;
+}
+
+function formatCallRecordsForPGPromise(calldata: CallRecord[]): SaveableCallRecordFields[] {
+  const formattedData = calldata.map((record: CallRecord) => {
     const {
       date, callerid, destination, description, account, disposition, seconds, uniqueid,
     } = record;
@@ -58,124 +78,148 @@ function formatCallRecordsForPGPromise(calldata: CallData[]): SaveableCallRecord
   return formattedData;
 }
 
-function extractDestinationPhoneNumbers(callData: CallData[]) {
-  const allPhoneNumbers = callData.map((record: CallData) => record.destination);
+function extractDestinationPhoneNumbers(callData: CallRecord[]) {
+  const allPhoneNumbers = callData.map((record: CallRecord) => record.destination);
   const uniqueNumbers = lodash.uniq(allPhoneNumbers);
   return uniqueNumbers;
 }
 
-const multiInsertNewCampaigns = 'INSERT INTO campaign (number, app_user_id) VALUES %L';
-
-const multiInsertCallData = 'INSERT INTO calls (uniqueId, destination, callerID, description, account, disposition, seconds) VALUES %L';
-
-function isRequest(input: VoipMsProperties | Request): input is Request {
-  return (input as Request).body !== 'undefined';
-}
-
-async function captureCallData(input: VoipMsProperties | Request, res?: Response): Promise<void> {
-  let userName;
-  let apiPassword;
-  let daysBack;
-
-  if (isRequest(input)) {
-    userName = input.body.userName;
-    apiPassword = input.body.apiPassword;
-    daysBack = 90;
-  } else {
-    userName = input.userName;
-    apiPassword = input.apiPassword;
-    daysBack = 3;
-  }
-
-  const apiMethod = 'getCDR';
-  const startDate = moment().subtract(daysBack, 'days').format('YYYY[-]MM[-]DD');
-  const endDate = moment().format('YYYY[-]MM[-]DD'); // now
-  const timeZone = -5;
-  const answered = 1;
-  const noanswer = 1;
-  const busy = 1;
-  const failed = 1;
-
-  const requestUrl = `http://voip.ms/api/v1/rest.php?api_username=${userName}&api_password=${apiPassword}&method=${apiMethod}&date_from=${startDate}&date_to=${endDate}&timezone=${timeZone}&answered=${answered}&noanswer=${noanswer}&busy=${busy}&failed=${failed}`;
-
+async function saveNewCallRecords(db: any, callData: CallRecord[]) {
+  const callDataFormattedForInsert = formatCallRecordsForPGPromise(callData);
+  const callColumns = new PGPromiseOptions.helpers.ColumnSet(['uniqueId', 'callerId', 'date', 'description', 'account', 'disposition', 'seconds', 'campaign_phoneNumber']);
+  const callTable = 'call';
+  const callMultiInsertQuery = PGPromiseOptions.helpers.insert(
+    callDataFormattedForInsert, callColumns, callTable,
+  );
   try {
-    const response = await fetch(requestUrl, {
-      headers: {
-        'content-type': 'application/json',
-      },
-      mode: 'cors',
-      method: 'get',
-    });
-
-    const callData: CallData[] = await response.json();
-
-    // todo save to database
-    // create new campaigns first (new numbers)
-    // add call data next
-    // todo pass connection details
-    const pgPromiseConfiged = PGPromiseOptions({
-      host: process.env.PGHOST,
-      port: Number(process.env.PGPORT),
-      database: process.env.PGDATABASE,
-      user: process.env.PGUSER,
-      password: process.env.PGPASSWORD,
-    });
-
-    const userId: string = await pgPromiseConfiged.one(
-      'SELECT id FROM app_user WHERE user_name = $1',
-      [userName],
-      (record: any) => record.id,
-    );
-
-    // todo insert campaigns (if no phone number found)
-    const uniqueNumbers = extractDestinationPhoneNumbers(callData);
-    const campaignData = uniqueNumbers.map((phoneNumber: string) => ({
-      phoneNumber: PGPromiseOptions.as.number(Number(phoneNumber)),
-      status: 'active',
-      app_user_id: userId,
-    }));
-    const campaignColumns = ['phoneNumber', 'status', 'app_user_id'];
-    const campaignTable = { table: 'campaign' };
-    const multiInsertString = PGPromiseOptions.helpers.insert(
-      campaignData, campaignColumns, campaignTable,
-    );
-    const campaignQueryWithNoConflicts = `${multiInsertString} ON CONFLICT DO NOTHING`;
-    await pgPromiseConfiged.none(campaignQueryWithNoConflicts);
-
-    // save the call data to database
-    // define columns and table
-    const callDataFormattedForInsert = formatCallRecordsForPGPromise(callData);
-    const callColumns = new PGPromiseOptions.helpers.ColumnSet(['uniqueId', 'callerId', 'date', 'description', 'account', 'disposition', 'seconds', 'campaign_phoneNumber']);
-    const callTable = 'call';
-    const callMultiInsertQuery = PGPromiseOptions.helpers.insert(
-      callDataFormattedForInsert, callColumns, callTable,
-    );
-    await pgPromiseConfiged.none(callMultiInsertQuery);
-
-    // todo multi insert
-    // figure out what info is needed for each table insert
-    // ANSWER: USER ID ONLY
-    // table campaign
-      // insert if not exists: campaign.phoneNumber = number
-      // status: active
-      // app_user_id = id
-
-    // calls campaign
-      // insert if not exists: uniqueId = uniqueid (lowercase i)
-      // {...recordData}
-
-
-    // if there's a response object, then send a response
-    if (res) {
-      if (response.ok) {
-        res.status(204).send();
-      } else {
-        throw new Error('fetchCallData, response.ok was falsy');
-      }
-    }
+    await db.none(callMultiInsertQuery);
   } catch (error) {
     throw new Error(error);
   }
 }
 
-export default captureCallData;
+export default class AsyncCallData {
+  private userId: string = ''; // properly initialized with this.initializeAsyncValues()
+
+  private userName: string;
+
+  private pgPromiseOptions: ReturnType<typeof PGPromise>;
+
+  constructor(
+    input: VoipMsProperties | Request,
+    private pgPromiseConfigured: ReturnType<ReturnType<typeof PGPromise>>,
+  ) {
+    this.pgPromiseOptions = PGPromise({
+      capSQL: true,
+    });
+    this.pgPromiseConfigured = pgPromiseConfigured;
+    this.userName = setUserName(input);
+  }
+
+  // --------------- Public Methods
+
+  public async initializeAsyncValues() {
+    this.userId = await this.setUserID();
+  }
+
+  public async captureCallData(input: VoipMsProperties | Request, res?: Response): Promise<void> {
+    try {
+      const callData: CallRecord[] = await this.fetchCallData(input, res);
+
+      await this.insertNewCampaignsIfNoMatchingPhoneNumber(
+        this.pgPromiseConfigured, callData, this.userId, this.userName,
+      );
+
+      await saveNewCallRecords(this.pgPromiseConfigured, callData);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  // --------------- Internal Methods
+
+  private async fetchCallData(input: VoipMsProperties | Request, res?: Response) {
+    let apiPassword;
+    let daysBack;
+
+    if (isRequest(input)) {
+      apiPassword = input.body.apiPassword;
+      daysBack = 90;
+    } else {
+      apiPassword = input.apiPassword;
+      daysBack = 3;
+    }
+
+    const apiMethod = 'getCDR';
+    const startDate = moment().subtract(daysBack, 'days').format('YYYY[-]MM[-]DD');
+    const endDate = moment().format('YYYY[-]MM[-]DD'); // now
+    const timeZone = -5;
+    const answered = 1;
+    const noanswer = 1;
+    const busy = 1;
+    const failed = 1;
+
+    const requestUrl = `http://voip.ms/api/v1/rest.php?api_username=${this.userName}&api_password=${apiPassword}&method=${apiMethod}&date_from=${startDate}&date_to=${endDate}&timezone=${timeZone}&answered=${answered}&noanswer=${noanswer}&busy=${busy}&failed=${failed}`;
+
+    try {
+      const response = await fetch(requestUrl, {
+        headers: {
+          'content-type': 'application/json',
+        },
+        mode: 'cors',
+        method: 'get',
+      });
+
+      const callData: CallRecord[] = await response.json();
+
+      if (typeof res !== 'undefined') {
+        if (response.ok) {
+          res.status(204).send();
+        } else {
+          throw new Error('fetchCallData, response.ok was falsy');
+        }
+      }
+
+      return Promise.resolve(callData);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  private async insertNewCampaignsIfNoMatchingPhoneNumber(
+    pgPromiseConfigured: any, callData: CallRecord[], userId: string, userName: string,
+  ) {
+    const uniqueNumbers = extractDestinationPhoneNumbers(callData);
+    const campaignData = uniqueNumbers.map((phoneNumber: string) => ({
+      phoneNumber: PGPromiseOptions.as.number(Number(phoneNumber)),
+      status: 'active',
+      app_user_id: this.userId,
+    }));
+    const campaignColumns = ['phoneNumber', 'status', 'app_user_id'];
+    const campaignTable = { table: 'campaign' };
+    const multiValueInsert = PGPromiseOptions.helpers.insert(
+      campaignData, campaignColumns, campaignTable,
+    );
+    const campaignQueryWithNoConflicts = `${multiValueInsert} ON CONFLICT DO NOTHING`;
+
+    try {
+      await this.pgPromiseConfigured.none(campaignQueryWithNoConflicts);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  private async setUserID() {
+    try {
+      const userId: string = await this.pgPromiseConfigured.one(
+        'SELECT id FROM app_user WHERE user_name = $1',
+        [this.userName],
+        (record: any) => record.id,
+      );
+
+      return userId;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+}
