@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import captureCallData from './function';
+import captureCallData from './AsyncCallData';
 
 const router: Router = Router();
 

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { CronJob } from 'cron';
 import PGPromise from 'pg-promise';
-import captureCallData from '../captureCallData/function';
+import captureCallData from '../captureCallData/AsyncCallData';
 
 const pgPromise = PGPromise({
   capSQL: true,

@@ -5,98 +5,15 @@ import { Request, Response } from 'express';
 import moment from 'moment';
 import PGPromise from 'pg-promise';
 import dotenv from 'dotenv';
-import lodash from 'lodash';
 import { PGPromiseOptions } from '../shared/databaseConfig';
+import { saveNewCallRecords } from './helperFunctions/saveNewCallRecords';
+import { extractDestinationPhoneNumbers } from './helperFunctions/extractDestinationPhoneNumbers';
+import { setUserName } from './helperFunctions/setUserName';
+import { isRequest } from './helperFunctions/isRequest';
+import { VoipMsProperties } from './interfaces/VoipMsProperties';
+import { CallRecord } from './interfaces/CallRecord';
 
 dotenv.config();
-
-interface VoipMsProperties {
-  userName: string;
-  apiPassword: string;
-}
-
-interface CallRecord {
-    date: string; // "2020-08-11 11:43:12";
-    callerid: string; // "8335951058";
-    destination: string; // "9093455007";
-    description: string; // "Inbound DID";
-    account: string; // "154240";
-    disposition: string; // "ANSWERED";
-    duration: string; // "00:00:08";
-    seconds: string; // "8";
-    rate: string; // "0.00900000";
-    total: string; // "0.00180000";
-    uniqueid: string; // "2125241911";
-    useragent: string; // "";
-    ip: string; // "";
-}
-
-interface SaveableCallRecordFields {
-  uniqueId: string,
-  callerId: string,
-  date: string,
-  description: string,
-  account: string,
-  disposition: string,
-  seconds: string,
-  campaign_phoneNumber: string
-}
-
-function isRequest(input: VoipMsProperties | Request): input is Request {
-  return (input as Request).body !== 'undefined';
-}
-
-function setUserName(input: VoipMsProperties | Request) {
-  let userName: string;
-
-  if (isRequest(input)) {
-    userName = input.body.userName;
-  } else {
-    userName = input.userName;
-  }
-
-  return userName;
-}
-
-function formatCallRecordsForPGPromise(calldata: CallRecord[]): SaveableCallRecordFields[] {
-  const formattedData = calldata.map((record: CallRecord) => {
-    const {
-      date, callerid, destination, description, account, disposition, seconds, uniqueid,
-    } = record;
-
-    return {
-      uniqueId: PGPromise.as.number(Number(uniqueid)),
-      callerId: callerid,
-      date: PGPromise.as.date(new Date(date)),
-      description,
-      account,
-      disposition,
-      seconds: PGPromise.as.number(Number(seconds)),
-      campaign_phoneNumber: PGPromise.as.number(Number(destination)),
-    };
-  });
-  return formattedData;
-}
-
-function extractDestinationPhoneNumbers(callData: CallRecord[]) {
-  const allPhoneNumbers = callData.map((record: CallRecord) => record.destination);
-  const uniqueNumbers = lodash.uniq(allPhoneNumbers);
-  return uniqueNumbers;
-}
-
-async function saveNewCallRecords(db: any, callData: CallRecord[]) {
-  const callDataFormattedForInsert = formatCallRecordsForPGPromise(callData);
-  const callColumns = new PGPromiseOptions.helpers.ColumnSet(['uniqueId', 'callerId', 'date', 'description', 'account', 'disposition', 'seconds', 'campaign_phoneNumber']);
-  const callTable = 'call';
-  const callMultiInsertQuery = PGPromiseOptions.helpers.insert(
-    callDataFormattedForInsert, callColumns, callTable,
-  );
-  try {
-    await db.none(callMultiInsertQuery);
-  } catch (error) {
-    throw new Error(error);
-  }
-}
 
 export default class AsyncCallData {
   private userId: string = ''; // properly initialized with this.initializeAsyncValues()
@@ -123,17 +40,13 @@ export default class AsyncCallData {
   }
 
   public async captureCallData(input: VoipMsProperties | Request, res?: Response): Promise<void> {
-    try {
-      const callData: CallRecord[] = await this.fetchCallData(input, res);
+    const callData: CallRecord[] = await this.fetchCallData(input, res);
 
-      await this.insertNewCampaignsIfNoMatchingPhoneNumber(
-        this.pgPromiseConfigured, callData, this.userId, this.userName,
-      );
+    await this.insertNewCampaignsIfNoMatchingPhoneNumber(
+      this.pgPromiseConfigured, callData, this.userId, this.userName,
+    );
 
-      await saveNewCallRecords(this.pgPromiseConfigured, callData);
-    } catch (error) {
-      throw new Error(error);
-    }
+    await saveNewCallRecords(this.pgPromiseConfigured, callData);
   }
 
   // --------------- Internal Methods
