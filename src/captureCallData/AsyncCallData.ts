@@ -36,7 +36,7 @@ export default class AsyncCallData {
   // --------------- Public Methods
 
   public async initializeAsyncValues() {
-    if (typeof this.userId === 'undefined') {
+    if (this.userId === 'undefined') {
       this.userId = await this.setUserID();
     }
   }
@@ -47,7 +47,7 @@ export default class AsyncCallData {
     const callData: CallRecord[] = await this.fetchCallData(input, res);
 
     await this.insertNewCampaignsIfNoMatchingPhoneNumber(
-      this.pgPromiseConfigured, callData, this.userId, this.userName,
+      this.pgPromiseConfigured, callData, this.userId!, this.userName,
     );
 
     await saveNewCallRecords(this.pgPromiseConfigured, callData);

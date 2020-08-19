@@ -19,7 +19,7 @@
     "outDir": "compiled"
   },
   "include": [
-    "src"
+    "src", "__mocks__"
   ],
   "exclude": ["node_modules", "**/*.test.ts"]
 }
