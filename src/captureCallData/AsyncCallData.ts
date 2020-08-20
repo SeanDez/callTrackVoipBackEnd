@@ -6,7 +6,7 @@ import moment from 'moment';
 import PGPromise from 'pg-promise';
 import dotenv from 'dotenv';
 import { PGPromiseOptions } from '../shared/databaseConfig';
-import { saveNewCallRecords } from './helperFunctions/saveNewCallRecords';
+import saveNewCallRecords from './helperFunctions/saveNewCallRecords';
 import { extractDestinationPhoneNumbers } from './helperFunctions/extractDestinationPhoneNumbers';
 import { setUserName } from './helperFunctions/setUserName';
 import { isRequest } from './helperFunctions/isRequest';
