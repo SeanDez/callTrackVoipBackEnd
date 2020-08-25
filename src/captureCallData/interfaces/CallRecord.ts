@@ -1,4 +1,4 @@
-export interface CallRecord {
+export default interface CallRecord {
   date: string; // "2020-08-11 11:43:12";
   callerid: string; // "8335951058";
   destination: string; // "9093455007";

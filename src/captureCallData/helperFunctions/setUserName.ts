@@ -1,8 +1,8 @@
 import { Request } from 'express';
-import { VoipMsProperties } from '../interfaces/VoipMsProperties';
-import { isRequest } from './isRequest';
+import VoipMsProperties from '../interfaces/VoipMsProperties';
+import isRequest from './isRequest';
 
-export function setUserName(input: VoipMsProperties | Request) {
+function setUserName(input: VoipMsProperties | Request) {
   let userName: string;
 
   if (isRequest(input)) {
@@ -13,3 +13,5 @@ export function setUserName(input: VoipMsProperties | Request) {
 
   return userName;
 }
+
+export default setUserName;

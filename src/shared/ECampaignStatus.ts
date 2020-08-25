@@ -1,7 +1,7 @@
-enum CampaignStatus {
+enum ECampaignStatus {
   active = 'active',
   inactive = 'inactive',
   archived = 'archived'
 }
 
-export default CampaignStatus;
+export default ECampaignStatus;

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "live": "node compiled/server.js",
-    "server": "tsc && node compiled/server.js",
+    "start": "node compiled/server.js",
     "test:unit": "npx jest --watch unit",
     "test:integration": "npx jest --watch integration"
   },

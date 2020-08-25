@@ -1,11 +1,14 @@
 import PGPromise from 'pg-promise';
-import { SaveableCallRecordFields } from "../interfaces/SaveableCallRecordFields";
-import { CallRecord } from "../interfaces/CallRecord";
+import SaveableCallRecordFields from '../interfaces/SaveableCallRecordFields';
+import CallRecord from '../interfaces/CallRecord';
 
-export function formatCallRecordsForPGPromise(calldata: CallRecord[]): SaveableCallRecordFields[] {
+export default function formatCallRecordsForPGPromise(
+  calldata: CallRecord[],
+): SaveableCallRecordFields[] {
   const formattedData = calldata.map((record: CallRecord) => {
     const {
-      date, callerid, destination, description, account, disposition, seconds, uniqueid, } = record;
+      date, callerid, destination, description, account, disposition, seconds, uniqueid,
+    } = record;
 
     return {
       uniqueId: PGPromise.as.number(Number(uniqueid)),

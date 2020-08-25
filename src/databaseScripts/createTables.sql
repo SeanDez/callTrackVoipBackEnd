@@ -6,26 +6,28 @@
 
 CREATE TABLE IF NOT EXISTS "app_user" (
   "id" SERIAL primary key,
-  "user_name" VARCHAR(50) unique not null,
-  "password_hash" VARCHAR(50) not null,
-  "voipms_user_email" VARCHAR(50),
-  "voipms_password_encrypted" VARCHAR(50)
+  "user_name" TEXT unique not null,
+  "password_hash" TEXT not null,
+  "voipms_user_email" TEXT,
+  "voipms_password_encrypted" TEXT
 );
 
 CREATE TABLE IF NOT EXISTS "campaign" (
-  "phoneNumber" INTEGER not null primary key,
-  "name" VARCHAR(100),
-  "status" VARCHAR(30),
+  "id" SERIAL primary key,
+  "phoneNumber" INTEGER not null,
+  "name" TEXT,
+  "status" TEXT,
   "app_user_id" INTEGER REFERENCES "app_user" (id) on delete cascade
 );
 
 CREATE TABLE IF NOT EXISTS "call" (
-  "uniqueId" INTEGER not null primary key,
-  "callerId" VARCHAR(11),
+  "id" SERIAL primary key,
+  "unique_id" TEXT not null,
+  "caller_id" TEXT,
   "date" DATE,
-  "description" VARCHAR(80),
-  "account" VARCHAR(10),
-  "disposition" VARCHAR(20),
+  "description" TEXT,
+  "account" TEXT,
+  "disposition" TEXT,
   "seconds" SMALLINT,
-  "campaign_phoneNumber" INTEGER REFERENCES "campaign" (phoneNumber) on delete cascade
+  "campaign_id" TEXT REFERENCES "campaign" (id) on delete cascade
 )

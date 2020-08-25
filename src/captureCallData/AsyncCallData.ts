@@ -7,11 +7,11 @@ import PGPromise from 'pg-promise';
 import dotenv from 'dotenv';
 import { PGPromiseOptions } from '../shared/databaseConfig';
 import saveNewCallRecords from './helperFunctions/saveNewCallRecords';
-import { extractDestinationPhoneNumbers } from './helperFunctions/extractDestinationPhoneNumbers';
-import { setUserName } from './helperFunctions/setUserName';
-import { isRequest } from './helperFunctions/isRequest';
-import { VoipMsProperties } from './interfaces/VoipMsProperties';
-import { CallRecord } from './interfaces/CallRecord';
+import extractDestinationPhoneNumbers from './helperFunctions/extractDestinationPhoneNumbers';
+import setUserName from './helperFunctions/setUserName';
+import isRequest from './helperFunctions/isRequest';
+import VoipMsProperties from './interfaces/VoipMsProperties';
+import CallRecord from './interfaces/CallRecord';
 
 dotenv.config();
 
@@ -46,7 +46,7 @@ export default class AsyncCallData {
 
     const callData: CallRecord[] = await this.fetchCallData(input, res);
 
-    await this.insertNewCampaignsIfNoMatchingPhoneNumber(
+    await this.insertNewCampaignsForNewPhoneNumbers(
       this.pgPromiseConfigured, callData, this.userId!, this.userName,
     );
 
@@ -105,7 +105,10 @@ export default class AsyncCallData {
     }
   }
 
-  private async insertNewCampaignsIfNoMatchingPhoneNumber(
+  /*
+    Auto-creates new campaign records when there is no campaign with a phone number
+  */
+  private async insertNewCampaignsForNewPhoneNumbers(
     pgPromiseConfigured: any, callData: CallRecord[], userId: string, userName: string,
   ) {
     const uniqueNumbers = extractDestinationPhoneNumbers(callData);

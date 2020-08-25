@@ -1,8 +1,8 @@
 import { Client as PGClient, QueryResult } from 'pg';
 import Cryptor from 'cryptr';
 import dotenv from 'dotenv';
-import { AppUserIdAndVoipMsCredentialsEncrypted } from './AppUserIdAndVoipMsCredentialsEncrypted';
-import { IVoipUserLoginsDecrypted } from '../shared/IVoipUserLoginsDecrypted';
+import { AppUserIdAndVoipMsCredentialsEncrypted } from './interfaces/AppUserIdAndVoipMsCredentialsEncrypted';
+import IVoipUserLoginsDecrypted from './interfaces/IVoipUserLoginsDecrypted';
 
 dotenv.config();
 
@@ -30,10 +30,10 @@ async function getAllVoipMsUsersAndLoginData()
         }),
       );
 
-      return Promise.resolve(decryptedLogins);
+      return decryptedLogins;
     }
 
-    return Promise.resolve(null);
+    return null;
   } catch (error) {
     throw new Error(error);
   }

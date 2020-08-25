@@ -2,9 +2,9 @@
 import { CronJob } from 'cron';
 import PGPromise from 'pg-promise';
 import AsyncCallData from '../captureCallData/AsyncCallData';
-import { VoipMsProperties } from '../captureCallData/interfaces/VoipMsProperties';
+import VoipMsProperties from '../captureCallData/interfaces/VoipMsProperties';
 import getAllVoipMsUsersAndLoginData from '../shared/getAllUsersLogins';
-import { IVoipUserLoginsDecrypted } from '../shared/IVoipUserLoginsDecrypted';
+import IVoipUserLoginsDecrypted from '../shared/interfaces/IVoipUserLoginsDecrypted';
 
 const every12Hours = '* */12 * * *';
 
@@ -22,7 +22,7 @@ const captureCallDataEvery12Hours = new CronJob(every12Hours, () => {
     everyUserNameAndVoipLogin?.forEach((app_user: IVoipUserLoginsDecrypted) => {
       // todo run the main method
       // the forEach function handles iteration
-      
+
     });
   } catch (error) {
     console.log(error);

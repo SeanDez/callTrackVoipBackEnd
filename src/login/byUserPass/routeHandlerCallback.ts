@@ -1,6 +1,6 @@
 import { Client as PgClient } from 'pg';
 import { Request, Response } from 'express';
-import CampaignStatus from '../../shared/CampaignStatus';
+import ECampaignStatus from '../../shared/ECampaignStatus';
 
 const getUserCampaignDataQuery = `SELECT name, number, status
 FROM app_user
@@ -8,7 +8,7 @@ FROM app_user
 LEFT JOIN campaign
 ON app_user.id = campaign.app_user_id
 
-WHERE CAST(app_user.id as varchar(20)) = CAST($1 as varchar(20));
+WHERE CAST(app_user.id as TEXT) = CAST($1 as TEXT);
 `;
 
 interface UserShape {

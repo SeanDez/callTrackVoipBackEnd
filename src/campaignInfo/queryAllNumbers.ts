@@ -2,7 +2,7 @@ export default (userName: string) => `SELECT campaign.number, campaign.name, cam
 FROM user
 
 LEFT JOIN campaign
-ON user.id = campaign.userId
+ON user.id = campaign.user_id
 
 WHERE userName = ${userName}
 `;
