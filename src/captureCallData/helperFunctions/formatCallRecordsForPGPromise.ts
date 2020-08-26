@@ -22,11 +22,13 @@ export default async function formatCallRecordsForPGPromise(
       const phoneNumber = numberAndCallData[0];
 
       // todo get the campain id from a db query
-      const query = 'SELECT id FROM campaign WHERE phoneNumber = $1';
+      const selectCampaignId = 'SELECT id FROM campaign WHERE phoneNumber = $1';
 
       let campaign_id: number;
       try {
-        campaign_id = await pgp.configured.one(query, phoneNumber);
+        campaign_id = await pgp.configured.one(
+          selectCampaignId, phoneNumber, (queryResult: { id: number }) => queryResult.id,
+        );
       } catch (error) {
         throw new Error(error);
       }
