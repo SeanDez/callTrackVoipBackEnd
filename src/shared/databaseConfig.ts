@@ -8,8 +8,8 @@ export const databaseConfig = {
   password: process.env.PGPASSWORD,
 };
 
-export const PGPromiseOptions = PGPromise({
+export const optioned = PGPromise({
   capSQL: true,
 });
 
-export const pgPromiseConfigured = PGPromiseOptions(databaseConfig);
+export const configured = optioned(databaseConfig);

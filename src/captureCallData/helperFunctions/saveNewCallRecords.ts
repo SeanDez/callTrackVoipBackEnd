@@ -1,12 +1,12 @@
-import { PGPromiseOptions } from '../../shared/databaseConfig';
+import { optioned } from '../../shared/databaseConfig';
 import CallRecord from '../interfaces/CallRecord';
 import formatCallRecordsForPGPromise from './formatCallRecordsForPGPromise';
 
-async function saveNewCallRecords(db: any, callData: CallRecord[]) {
+async function saveNewCallRecords(db: any, callData: CallRecord[], campaign_id: string) {
   const callDataFormattedForInsert = formatCallRecordsForPGPromise(callData);
-  const callColumns = new PGPromiseOptions.helpers.ColumnSet(['unique_id', 'caller_id', 'date', 'description', 'account', 'disposition', 'seconds', 'campaign_id']);
+  const callColumns = new optioned.helpers.ColumnSet(['unique_id', 'caller_id', 'date', 'description', 'account', 'disposition', 'seconds', 'campaign_id']);
   const callTable = 'call';
-  const callMultiInsertQuery = PGPromiseOptions.helpers.insert(
+  const callMultiInsertQuery = optioned.helpers.insert(
     callDataFormattedForInsert, callColumns, callTable,
   );
   try {

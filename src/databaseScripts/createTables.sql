@@ -4,6 +4,8 @@
 -- remote command
 -- psql -h {host} -U "{username}" -d "{dataBase}" -a -f {fullFilePath}
 
+BEGIN;
+
 CREATE TABLE IF NOT EXISTS "app_user" (
   "id" SERIAL primary key,
   "user_name" TEXT unique not null,
@@ -31,3 +33,5 @@ CREATE TABLE IF NOT EXISTS "call" (
   "seconds" SMALLINT,
   "campaign_id" TEXT REFERENCES "campaign" (id) on delete cascade
 )
+
+COMMIT;

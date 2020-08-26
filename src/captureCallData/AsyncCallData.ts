@@ -5,7 +5,7 @@ import { Request, Response } from 'express';
 import moment from 'moment';
 import PGPromise from 'pg-promise';
 import dotenv from 'dotenv';
-import { PGPromiseOptions } from '../shared/databaseConfig';
+import { optioned } from '../shared/databaseConfig';
 import saveNewCallRecords from './helperFunctions/saveNewCallRecords';
 import extractDestinationPhoneNumbers from './helperFunctions/extractDestinationPhoneNumbers';
 import setUserName from './helperFunctions/setUserName';
@@ -52,7 +52,7 @@ export default class AsyncCallData {
 
     await saveNewCallRecords(this.pgPromiseConfigured, callData);
 
-    await dbConnection.done();
+    dbConnection.done();
   }
 
   // --------------- Internal Methods
@@ -99,7 +99,7 @@ export default class AsyncCallData {
         }
       }
 
-      return Promise.resolve(callData);
+      return callData;
     } catch (error) {
       throw new Error(error);
     }
@@ -113,13 +113,13 @@ export default class AsyncCallData {
   ) {
     const uniqueNumbers = extractDestinationPhoneNumbers(callData);
     const campaignData = uniqueNumbers.map((phoneNumber: string) => ({
-      phoneNumber: PGPromiseOptions.as.number(Number(phoneNumber)),
+      phoneNumber,
       status: 'active',
       app_user_id: this.userId,
     }));
     const campaignColumns = ['phoneNumber', 'status', 'app_user_id'];
     const campaignTable = { table: 'campaign' };
-    const multiValueInsert = PGPromiseOptions.helpers.insert(
+    const multiValueInsert = optioned.helpers.insert(
       campaignData, campaignColumns, campaignTable,
     );
     const campaignQueryWithNoConflicts = `${multiValueInsert} ON CONFLICT DO NOTHING`;

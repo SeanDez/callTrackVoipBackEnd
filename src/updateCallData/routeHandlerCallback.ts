@@ -25,11 +25,11 @@ async function updateCampaign(req: Request, res: Response) {
 
   const pgPool = new PGPool();
   try {
-    const queryResult = await pgPool.query(userIdQuery(userName));
+    const queryResult = await pgPool.query(userIdQuery, [userName]);
     const userId: string = (queryResult.rows as Array<userIdQueryResult>)[0].id;
 
     if (typeof userId === 'string') {
-      await pgPool.query(updateCampaignQuery(userId, columnName, newValue));
+      await pgPool.query(updateCampaignQuery, [columnName, newValue, userId]);
       res.status(204).send(); // success, no content
     }
 
