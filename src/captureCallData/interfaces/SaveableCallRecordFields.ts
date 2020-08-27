@@ -1,4 +1,4 @@
-export default interface SaveableCallRecordFields {
+export default interface SaveableCallRecord {
   unique_id: string;
   caller_id: string;
   date: string;

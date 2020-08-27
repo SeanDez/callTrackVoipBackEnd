@@ -1,7 +1,7 @@
 import PGPromise from 'pg-promise';
 import lodash from 'lodash';
 import * as pgp from '../../shared/databaseConfig';
-import SaveableCallRecordFields from '../interfaces/SaveableCallRecordFields';
+import SaveableCallRecord from '../interfaces/SaveableCallRecordFields';
 import CallRecord from '../interfaces/CallRecord';
 
 interface PhoneNumberKeyedCallData {
@@ -10,18 +10,17 @@ interface PhoneNumberKeyedCallData {
 
 export default async function formatCallRecordsForPGPromise(
   rawCalldata: CallRecord[],
-): Promise<SaveableCallRecordFields[]> {
+): Promise<SaveableCallRecord[]> {
   const dataSortedbyPhoneNumber: PhoneNumberKeyedCallData = lodash.groupBy(rawCalldata,
     (record: CallRecord) => record.destination);
 
   const phoneNumberAndGroupedData: [string, CallRecord[]][] = Object
     .entries(dataSortedbyPhoneNumber);
 
-  const allDataFlattened: SaveableCallRecordFields[] = phoneNumberAndGroupedData
-    .map((numberAndCallData: [string, CallRecord[]]) => {
+  const allData: Promise<SaveableCallRecord[]>[] = phoneNumberAndGroupedData
+    .map(async (numberAndCallData: [string, CallRecord[]]) => {
       const phoneNumber = numberAndCallData[0];
 
-      // todo get the campain id from a db query
       const selectCampaignId = 'SELECT id FROM campaign WHERE phoneNumber = $1';
 
       let campaign_id: number;
@@ -33,13 +32,13 @@ export default async function formatCallRecordsForPGPromise(
         throw new Error(error);
       }
 
-      const formattedDataSet: SaveableCallRecordFields[] = numberAndCallData[1]
+      const formattedDataSet: SaveableCallRecord[] = numberAndCallData[1]
         .map((record: CallRecord) => {
           const {
             date, callerid, destination, description, account, disposition, seconds, uniqueid,
           } = record;
 
-          const formattedData: SaveableCallRecordFields = {
+          const formattedData: SaveableCallRecord = {
             unique_id: uniqueid,
             caller_id: callerid,
             date: PGPromise.as.date(new Date(date)),
@@ -54,8 +53,11 @@ export default async function formatCallRecordsForPGPromise(
         });
 
       return formattedDataSet;
-    })
-    .flat();
+    });
+
+  await Promise.all(allData);
+
+  const allDataFlattened = allData.flat() as unknown as SaveableCallRecord[];
 
   return allDataFlattened;
 }
