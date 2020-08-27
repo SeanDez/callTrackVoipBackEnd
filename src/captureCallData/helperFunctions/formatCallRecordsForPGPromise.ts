@@ -35,7 +35,7 @@ export default async function formatCallRecordsForPGPromise(
       const formattedDataSet: SaveableCallRecord[] = numberAndCallData[1]
         .map((record: CallRecord) => {
           const {
-            date, callerid, destination, description, account, disposition, seconds, uniqueid,
+            date, callerid, description, account, disposition, seconds, uniqueid,
           } = record;
 
           const formattedData: SaveableCallRecord = {
@@ -55,9 +55,9 @@ export default async function formatCallRecordsForPGPromise(
       return formattedDataSet;
     });
 
-  await Promise.all(allData);
+  const allDataResolved = await Promise.all(allData);
 
-  const allDataFlattened = allData.flat() as unknown as SaveableCallRecord[];
+  const allDataFlattened = allDataResolved.flat();
 
   return allDataFlattened;
 }

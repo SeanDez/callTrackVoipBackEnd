@@ -2,7 +2,7 @@ import { optioned } from '../../shared/databaseConfig';
 import CallRecord from '../interfaces/CallRecord';
 import formatCallRecordsForPGPromise from './formatCallRecordsForPGPromise';
 
-async function saveNewCallRecords(db: any, callData: CallRecord[], campaign_id: string) {
+async function saveNewCallRecords(db: any, callData: CallRecord[]) {
   const callDataFormattedForInsert = formatCallRecordsForPGPromise(callData);
   const callColumns = new optioned.helpers.ColumnSet(['unique_id', 'caller_id', 'date', 'description', 'account', 'disposition', 'seconds', 'campaign_id']);
   const callTable = 'call';
