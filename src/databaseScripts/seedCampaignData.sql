@@ -4,9 +4,9 @@
 -- remote command
 -- psql -h {host} -U "{username}" -d "{dataBase}" -a -f {fullFilePath}
 
-INSERT INTO "campaign" (name, status, number, app_user_id) VALUES
+INSERT INTO "campaign" (name, status, "phoneNumber", app_user_id) VALUES
 ('campaign01', 'active', '01234567890', 2), 
-(null, 'archived', '460482p5479', 1), 
+(null, 'archived', '46048258479', 1), 
 ('campaign03', 'inactive', '17027741094', 2), 
 ('campaign04', 'active', '91465657932', 1), 
 (null, null, '66986267061', 2), 

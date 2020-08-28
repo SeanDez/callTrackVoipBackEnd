@@ -50,6 +50,8 @@ server
   .use(fetchCallDataRouter)
   .use(userPassLoginRouter);
 
+console.log(`updated on ${new Date()}`);
+
 server.listen(process.env.SERVER_PORT, () => {
   /* eslint-disable no-console */
   console.log(`Express server running & listening on port ${process.env.SERVER_PORT}`);

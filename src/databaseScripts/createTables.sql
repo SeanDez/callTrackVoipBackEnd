@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS "app_user" (
 
 CREATE TABLE IF NOT EXISTS "campaign" (
   "id" SERIAL primary key,
-  "phoneNumber" INTEGER not null,
+  "phoneNumber" TEXT not null,
   "name" TEXT,
   "status" TEXT,
   "app_user_id" INTEGER REFERENCES "app_user" (id) on delete cascade
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS "call" (
   "account" TEXT,
   "disposition" TEXT,
   "seconds" SMALLINT,
-  "campaign_id" TEXT REFERENCES "campaign" (id) on delete cascade
-)
+  "campaign_id" INTEGER REFERENCES "campaign" (id) on delete cascade
+);
 
 COMMIT;
