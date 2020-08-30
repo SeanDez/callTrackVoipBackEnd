@@ -139,6 +139,10 @@ export default class AsyncCallData {
         (record: any) => record.id,
       );
 
+      if (typeof userId !== 'string') {
+        throw new Error(`User ID not found for user ${this.userName}`);
+      }
+
       return userId;
     } catch (error) {
       throw new Error(error);

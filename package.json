@@ -2,11 +2,13 @@
   "name": "voip_call_track_backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "compiled/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "live": "node compiled/server.js",
-    "start": "tsc && node compiled/server.js",
+    "start": "node compiled/server.js",
+    "dev": "ts-node-dev --respawn src/server.ts",
+    "build": "tsc",
     "test:unit": "npx jest --watch unit",
     "test:integration": "npx jest --watch integration"
   },
@@ -61,6 +63,7 @@
     "jest": "^26.2.2",
     "jest-fetch-mock": "^3.0.3",
     "nodemon": "^2.0.4",
-    "ts-jest": "^26.1.4"
+    "ts-jest": "^26.1.4",
+    "ts-node-dev": "^1.0.0-pre.61"
   }
 }

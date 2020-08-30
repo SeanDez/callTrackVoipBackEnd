@@ -55,7 +55,7 @@ export default async function formatCallRecordsForPGPromise(
       return formattedDataSet;
     });
 
-  const allDataResolved = await Promise.all(allData);
+  const [allDataResolved] = await Promise.all(allData);
 
   const allDataFlattened = allDataResolved.flat();
 
