@@ -21,7 +21,8 @@ export default async function formatCallRecordsForPGPromise(
     .map(async (numberAndCallData: [string, CallRecord[]]) => {
       const phoneNumber = numberAndCallData[0];
 
-      const selectCampaignId = 'SELECT id FROM campaign WHERE phoneNumber = $1';
+      // phoneNumber must be double quoted to avoid case folding
+      const selectCampaignId = 'SELECT id FROM campaign WHERE "phoneNumber" = $1';
 
       let campaign_id: number;
       try {

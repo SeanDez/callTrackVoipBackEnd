@@ -1,8 +1,8 @@
 -- local command
--- psql -h localhost -U "{username}" -d "{dataBase}" -a -f {fullFilePath}
+-- psql -h localhost -U username -d dataBase -a -f fullFilePath
 
 -- remote command
--- psql -h {host} -U "{username}" -d "{dataBase}" -a -f {fullFilePath}
+-- psql -h {host} -U username -d dataBase -a -f fullFilePath
 
 BEGIN;
 
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS "app_user" (
 
 CREATE TABLE IF NOT EXISTS "campaign" (
   "id" SERIAL primary key,
-  "phoneNumber" TEXT not null,
+  "phoneNumber" TEXT not null unique,
   "name" TEXT,
   "status" TEXT,
   "app_user_id" INTEGER REFERENCES "app_user" (id) on delete cascade

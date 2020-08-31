@@ -19,4 +19,6 @@ INSERT INTO "campaign" (name, status, "phoneNumber", app_user_id) VALUES
 ('campaign12', 'inactive', '42457843647', 1), 
 ('campaign013', 'active', '56523849483', 1), 
 ('campaign14', 'archived', '37732243325', 1), 
-('campaign15', 'inactive', '93418635266', 1);
+('campaign15', 'inactive', '93418635266', 1)
+
+ON CONFLICT DO NOTHING;

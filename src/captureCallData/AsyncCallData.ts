@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import { optioned } from '../shared/databaseConfig';
 import saveNewCallRecords from './helperFunctions/saveNewCallRecords';
 import extractDestinationPhoneNumbers from './helperFunctions/extractDestinationPhoneNumbers';
-import setUserName from './helperFunctions/setUserName';
+import setVoipMsUserName from './helperFunctions/setUserName';
 import isRequest from './helperFunctions/isRequest';
 import VoipMsProperties from './interfaces/VoipMsProperties';
 import CallRecord from './interfaces/CallRecord';
@@ -18,7 +18,7 @@ dotenv.config();
 type PGPromiseConnection = ReturnType<ReturnType<typeof PGPromise>>;
 
 export default class AsyncCallData {
-  private userName: string;
+  private voipms_username: string;
 
   private pgPromiseOptions: ReturnType<typeof PGPromise>;
 
@@ -30,13 +30,13 @@ export default class AsyncCallData {
     this.pgPromiseOptions = PGPromise({
       capSQL: true,
     });
-    this.userName = setUserName(input);
+    this.voipms_username = setVoipMsUserName(input);
   }
 
   // --------------- Public Methods
 
   public async initializeAsyncValues() {
-    if (this.userId === 'undefined') {
+    if (typeof this.userId === 'undefined') {
       this.userId = await this.setUserID();
     }
   }
@@ -44,10 +44,12 @@ export default class AsyncCallData {
   public async captureCallData(input: VoipMsProperties | Request, res?: Response): Promise<void> {
     const dbConnection = await this.pgPromiseConfigured.connect();
 
+    // it's an object
+    // callData.cdr is what i want
     const callData: CallRecord[] = await this.fetchCallData(input, res);
 
     await this.insertNewCampaignsForNewPhoneNumbers(
-      this.pgPromiseConfigured, callData, this.userId!, this.userName,
+      this.pgPromiseConfigured, callData, this.userId!, this.voipms_username,
     );
 
     await saveNewCallRecords(this.pgPromiseConfigured, callData);
@@ -58,14 +60,14 @@ export default class AsyncCallData {
   // --------------- Internal Methods
 
   private async fetchCallData(input: VoipMsProperties | Request, res?: Response) {
-    let apiPassword;
+    let voipms_api_password;
     let daysBack;
 
     if (isRequest(input)) {
-      apiPassword = input.body.apiPassword;
+      voipms_api_password = input.body.voipms_api_password;
       daysBack = 90;
     } else {
-      apiPassword = input.apiPassword;
+      voipms_api_password = input.voipms_api_password;
       daysBack = 3;
     }
 
@@ -78,7 +80,7 @@ export default class AsyncCallData {
     const busy = 1;
     const failed = 1;
 
-    const requestUrl = `http://voip.ms/api/v1/rest.php?api_username=${this.userName}&api_password=${apiPassword}&method=${apiMethod}&date_from=${startDate}&date_to=${endDate}&timezone=${timeZone}&answered=${answered}&noanswer=${noanswer}&busy=${busy}&failed=${failed}`;
+    const requestUrl = `http://voip.ms/api/v1/rest.php?api_username=${this.voipms_username}&api_password=${voipms_api_password}&method=${apiMethod}&date_from=${startDate}&date_to=${endDate}&timezone=${timeZone}&answered=${answered}&noanswer=${noanswer}&busy=${busy}&failed=${failed}`;
 
     try {
       const response = await fetch(requestUrl, {
@@ -89,7 +91,8 @@ export default class AsyncCallData {
         method: 'get',
       });
 
-      const callData: CallRecord[] = await response.json();
+      const voipMsData = await response.json();
+      const cdrData: CallRecord[] = voipMsData.cdr;
 
       if (typeof res !== 'undefined') {
         if (response.ok) {
@@ -99,7 +102,7 @@ export default class AsyncCallData {
         }
       }
 
-      return callData;
+      return cdrData;
     } catch (error) {
       throw new Error(error);
     }
@@ -134,13 +137,13 @@ export default class AsyncCallData {
   private async setUserID() {
     try {
       const userId: string = await this.pgPromiseConfigured.one(
-        'SELECT id FROM app_user WHERE user_name = $1',
-        [this.userName],
-        (record: any) => record.id,
+        'SELECT id FROM app_user WHERE voipms_user_email = $1',
+        [this.voipms_username],
+        (record: { id: number }) => record.id.toString(),
       );
 
       if (typeof userId !== 'string') {
-        throw new Error(`User ID not found for user ${this.userName}`);
+        throw new Error(`User ID not found for user ${this.voipms_username}`);
       }
 
       return userId;

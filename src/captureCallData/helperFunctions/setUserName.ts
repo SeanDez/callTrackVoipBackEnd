@@ -2,16 +2,16 @@ import { Request } from 'express';
 import VoipMsProperties from '../interfaces/VoipMsProperties';
 import isRequest from './isRequest';
 
-function setUserName(input: VoipMsProperties | Request) {
-  let userName: string;
+function setVoipMsUserName(input: VoipMsProperties | Request) {
+  let voipms_username: string;
 
   if (isRequest(input)) {
-    userName = input.body.userName;
+    voipms_username = input.body.voipms_username;
   } else {
-    userName = input.userName;
+    voipms_username = input.voipms_username;
   }
 
-  return userName;
+  return voipms_username;
 }
 
-export default setUserName;
+export default setVoipMsUserName;
