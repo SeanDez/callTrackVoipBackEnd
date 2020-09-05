@@ -4,35 +4,33 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import { Client as PgClient } from 'pg';
 import bcrypt from 'bcrypt';
 
-const selectUserQuery = `SELECT id, user_name, password_hash
+const selectUserQuery = `SELECT *
 FROM app_user
-WHERE user_name = $1::text;
+WHERE CAST(user_name as TEXT) = CAST($1 as TEXT);
 `;
 
 interface UserMatch {
-  id: string,
-  user_name: string,
-  password_hash: string
+  id: string;
+  user_name: string;
+  password_hash: string;
+  voipms_user_email: string;
+  voipms_password_encrypted: string;
 }
 
-async function useDatabaseToVerifyUserAndPassword(userName: string,
-  formPassword: string, doneCallback: any) {
+async function useDatabaseToVerifyUserAndPassword(localUserName: string,
+  localPassword: string, doneCallback: any) {
   const pgClient = new PgClient();
 
   try {
     await pgClient.connect();
-    const queryResult = await pgClient.query(selectUserQuery, [userName]);
+    const queryResult = await pgClient.query(selectUserQuery, [localUserName]);
     pgClient.end();
     const userData: UserMatch = queryResult.rows[0];
-    // const hashesMatch: boolean = await bcrypt.compare(formPassword, userData.password_hash);
-    // todo add bcrypt hash comparison
-    const hashesMatch = formPassword === userData.password_hash; // not a real hash test!
+
+    const hashesMatch: boolean = await bcrypt.compare(localPassword, userData.password_hash);
 
     if (hashesMatch) {
-      return doneCallback(null, {
-        id: userData.id,
-        user_name: userData.user_name,
-      }); // feeds into req.user
+      return doneCallback(null, userData); // feeds into req.user
     }
 
     return doneCallback(null, false); // username not found or passHash mismatch. Prints 401 UnAuth
@@ -41,8 +39,13 @@ async function useDatabaseToVerifyUserAndPassword(userName: string,
   }
 }
 
+const strategyOptions = {
+  usernameField: 'localUserName',
+  passwordField: 'localPassword',
+};
+
 // assign the database login callback to the strategy
-const localStrategy = new LocalStrategy(useDatabaseToVerifyUserAndPassword);
+const localStrategy = new LocalStrategy(strategyOptions, useDatabaseToVerifyUserAndPassword);
 // add the 'local' strategy as a passport middleware
 passport.use(localStrategy);
 

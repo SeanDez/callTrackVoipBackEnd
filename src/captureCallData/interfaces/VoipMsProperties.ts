@@ -1,4 +1,4 @@
 export default interface VoipMsProperties {
-  voipms_username: string;
-  voipms_api_password: string;
+  voipms_user_email: string;
+  voipms_password_encrypted: string;
 }

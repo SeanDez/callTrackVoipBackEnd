@@ -4,75 +4,79 @@ import 'isomorphic-fetch';
 import { Request, Response } from 'express';
 import moment from 'moment';
 import PGPromise from 'pg-promise';
+import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
-import { optioned } from '../shared/databaseConfig';
+import Cryptr from 'cryptr';
+import { optioned as pgOptioned, configured as pgConfigured } from '../shared/databaseConfig';
 import saveNewCallRecords from './helperFunctions/saveNewCallRecords';
 import extractDestinationPhoneNumbers from './helperFunctions/extractDestinationPhoneNumbers';
-import setVoipMsUserName from './helperFunctions/setUserName';
+import ILocalLoginDetails from './interfaces/ILocalLoginDetails';
+import IRequestWithUser from './interfaces/IRequestWithUser';
 import isRequest from './helperFunctions/isRequest';
+import isRequestWIthUser from '../shared/interfaces/isRequestWithUser';
 import VoipMsProperties from './interfaces/VoipMsProperties';
 import CallRecord from './interfaces/CallRecord';
 
 dotenv.config();
 
-type PGPromiseConnection = ReturnType<ReturnType<typeof PGPromise>>;
+const cryptr = new Cryptr(process.env.CRYPTR_SECRET!);
 
 export default class AsyncCallData {
-  private voipms_username: string;
+  private localUserId: string | undefined;
+
+  private localUserName: string;
+
+  private voipms_username: string | undefined;
+
+  private voip_password_decrypted: string | undefined;
 
   private pgPromiseOptions: ReturnType<typeof PGPromise>;
 
   constructor(
-    input: VoipMsProperties | Request,
-    private pgPromiseConfigured: PGPromiseConnection,
-    private userId?: string | undefined,
+    private req: IRequestWithUser,
+    private res: Response,
   ) {
     this.pgPromiseOptions = PGPromise({
       capSQL: true,
     });
-    this.voipms_username = setVoipMsUserName(input);
+    this.localUserName = this.req.user.user_name!;
   }
 
   // --------------- Public Methods
 
   public async initializeAsyncValues() {
-    if (typeof this.userId === 'undefined') {
-      this.userId = await this.setUserID();
+    if (typeof this.localUserId === 'undefined') {
+      const {
+        id, password_hash, voipms_user_email, voipms_password_encrypted,
+      } = await this.getUserInfo();
+
+      this.localUserId = id;
+      this.voipms_username = voipms_user_email;
+      this.voip_password_decrypted = cryptr.decrypt(voipms_password_encrypted);
     }
   }
 
-  public async captureCallData(input: VoipMsProperties | Request, res?: Response): Promise<void> {
-    const dbConnection = await this.pgPromiseConfigured.connect();
+  public async captureCallData(req: IRequestWithUser, res: Response): Promise<void> {
+    const dbConnection = await pgConfigured.connect();
 
     // it's an object
     // callData.cdr is what i want
-    const callData: CallRecord[] = await this.fetchCallData(input, res);
+    const callData: CallRecord[] = await this.fetchCallData(req, res);
 
     await this.insertNewCampaignsForNewPhoneNumbers(
-      this.pgPromiseConfigured, callData, this.userId!, this.voipms_username,
+      pgConfigured, callData, this.localUserId!, this.voipms_username!,
     );
 
-    await saveNewCallRecords(this.pgPromiseConfigured, callData);
+    await saveNewCallRecords(pgConfigured, callData);
 
     dbConnection.done();
   }
 
   // --------------- Internal Methods
 
-  private async fetchCallData(input: VoipMsProperties | Request, res?: Response) {
-    let voipms_api_password;
-    let daysBack;
-
-    if (isRequest(input)) {
-      voipms_api_password = input.body.voipms_api_password;
-      daysBack = 90;
-    } else {
-      voipms_api_password = input.voipms_api_password;
-      daysBack = 3;
-    }
-
+  private async fetchCallData(input: IRequestWithUser, res: Response) {
     const apiMethod = 'getCDR';
-    const startDate = moment().subtract(daysBack, 'days').format('YYYY[-]MM[-]DD');
+    const startDate = moment().subtract(90, 'days').format('YYYY[-]MM[-]DD');
     const endDate = moment().format('YYYY[-]MM[-]DD'); // now
     const timeZone = -5;
     const answered = 1;
@@ -80,7 +84,7 @@ export default class AsyncCallData {
     const busy = 1;
     const failed = 1;
 
-    const requestUrl = `http://voip.ms/api/v1/rest.php?api_username=${this.voipms_username}&api_password=${voipms_api_password}&method=${apiMethod}&date_from=${startDate}&date_to=${endDate}&timezone=${timeZone}&answered=${answered}&noanswer=${noanswer}&busy=${busy}&failed=${failed}`;
+    const requestUrl = `http://voip.ms/api/v1/rest.php?api_username=${this.voipms_username}&api_password=${this.voip_password_decrypted}&method=${apiMethod}&date_from=${startDate}&date_to=${endDate}&timezone=${timeZone}&answered=${answered}&noanswer=${noanswer}&busy=${busy}&failed=${failed}`;
 
     try {
       const response = await fetch(requestUrl, {
@@ -94,12 +98,10 @@ export default class AsyncCallData {
       const voipMsData = await response.json();
       const cdrData: CallRecord[] = voipMsData.cdr;
 
-      if (typeof res !== 'undefined') {
-        if (response.ok) {
-          res.status(204).send();
-        } else {
-          throw new Error('fetchCallData, response.ok was falsy');
-        }
+      if (response.ok) {
+        res.status(204).send();
+      } else {
+        throw new Error('fetchCallData, response.ok was falsy');
       }
 
       return cdrData;
@@ -118,35 +120,34 @@ export default class AsyncCallData {
     const campaignData = uniqueNumbers.map((phoneNumber: string) => ({
       phoneNumber,
       status: 'active',
-      app_user_id: this.userId,
+      app_user_id: this.localUserId,
     }));
     const campaignColumns = ['phoneNumber', 'status', 'app_user_id'];
     const campaignTable = { table: 'campaign' };
-    const multiValueInsert = optioned.helpers.insert(
+    const multiValueInsert = pgOptioned.helpers.insert(
       campaignData, campaignColumns, campaignTable,
     );
     const campaignQueryWithNoConflicts = `${multiValueInsert} ON CONFLICT DO NOTHING`;
 
     try {
-      await this.pgPromiseConfigured.none(campaignQueryWithNoConflicts);
+      await pgConfigured.none(campaignQueryWithNoConflicts);
     } catch (error) {
       throw new Error(error);
     }
   }
 
-  private async setUserID() {
+  private async getUserInfo() {
     try {
-      const userId: string = await this.pgPromiseConfigured.one(
-        'SELECT id FROM app_user WHERE voipms_user_email = $1',
-        [this.voipms_username],
-        (record: { id: number }) => record.id.toString(),
+      const userInfo: string = await pgConfigured.one(
+        'SELECT * FROM app_user WHERE user_name = $1',
+        [this.localUserName as string],
       );
 
-      if (typeof userId !== 'string') {
-        throw new Error(`User ID not found for user ${this.voipms_username}`);
+      if (typeof userInfo !== 'object') {
+        throw new Error(`User info not found for user ${this.voipms_username}`);
       }
 
-      return userId;
+      return userInfo;
     } catch (error) {
       throw new Error(error);
     }

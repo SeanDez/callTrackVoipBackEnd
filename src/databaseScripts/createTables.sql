@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS "campaign" (
 
 CREATE TABLE IF NOT EXISTS "call" (
   "id" SERIAL primary key,
-  "unique_id" TEXT not null,
+  "unique_id" TEXT not null unique,
   "caller_id" TEXT,
   "date" DATE,
   "description" TEXT,

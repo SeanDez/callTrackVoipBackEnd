@@ -5,6 +5,7 @@ import cors from 'cors';
 import passport from 'passport';
 import { Client as PgClient } from 'pg';
 import userPassLoginRouter from './login/byUserPass/router';
+import registerUserRouter from './registerNewUser/router';
 
 import rootRouter from './rootRoute/router';
 import fetchCallDataRouter from './captureCallData/router';
@@ -24,10 +25,12 @@ const server = express();
 //   });
 // });
 
+// called to set a cookie initially
 passport.serializeUser((user: any, callback) => {
   callback(null, user.id as string);
 });
 
+// called every time a request is made
 passport.deserializeUser(async (userId: string, callback) => {
   const pgClient = new PgClient();
   try {
@@ -47,6 +50,7 @@ server
   .use(passport.initialize())
   .use(passport.session())
   .use(rootRouter)
+  .use(registerUserRouter)
   .use(fetchCallDataRouter)
   .use(userPassLoginRouter);
 

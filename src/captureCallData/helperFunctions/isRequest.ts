@@ -1,8 +1,8 @@
 import { Request } from 'express';
-import VoipMsProperties from '../interfaces/VoipMsProperties';
+import ILocalLoginDetails from '../interfaces/ILocalLoginDetails';
 
-function isRequest(input: VoipMsProperties | Request): input is Request {
-  return (input as Request).body !== 'undefined';
+function isRequest(input: ILocalLoginDetails | Request): input is Request {
+  return typeof input.body !== 'undefined';
 }
 
 export default isRequest;

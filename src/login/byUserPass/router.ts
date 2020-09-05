@@ -1,15 +1,15 @@
 import { Router, Request, Response } from 'express';
 import passportWithLocalStrategy from './setupLocalStrategy';
-import sendUserIdAndNameAsJson from './routeHandlerCallback';
+import respondWithUserData from './routeHandlerCallback';
 
 const router = Router();
 
-const failureFlash = 'Invalid username or password.';
-
+// id, user_name, voipms_user_email, voipms_password_encrypted
+// pass back all data except id
 router.post(
   '/login',
   passportWithLocalStrategy.authenticate('local'),
-  sendUserIdAndNameAsJson,
+  respondWithUserData,
 );
 
 export default router;

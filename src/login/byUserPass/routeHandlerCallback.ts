@@ -2,18 +2,11 @@ import { Client as PgClient } from 'pg';
 import { Request, Response } from 'express';
 import ECampaignStatus from '../../shared/ECampaignStatus';
 
-const getUserCampaignDataQuery = `SELECT name, number, status
-FROM app_user
-
-LEFT JOIN campaign
-ON app_user.id = campaign.app_user_id
-
-WHERE CAST(app_user.id as TEXT) = CAST($1 as TEXT);
-`;
-
-interface UserShape {
-  id: string,
-  user_name: string,
+interface AppUser {
+  id: string;
+  user_name: string;
+  voipms_user_email: string;
+  voipms_password_encrypted: string;
 }
 
 /*
@@ -21,7 +14,7 @@ interface UserShape {
   Send back req.user
 */
 async function respondWithUserData(req: Request, res: Response) {
-  const userData = req.user as UserShape;
+  const userData = req.user as AppUser;
 
   res.json(userData);
 }

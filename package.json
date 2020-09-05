@@ -64,6 +64,7 @@
     "jest-fetch-mock": "^3.0.3",
     "nodemon": "^2.0.4",
     "ts-jest": "^26.1.4",
+    "ts-node": "^9.0.0",
     "ts-node-dev": "^1.0.0-pre.61"
   }
 }
