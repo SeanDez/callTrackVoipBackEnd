@@ -1,5 +1,5 @@
-import { Router, Response } from 'express';
-import passport from 'passport';
+import { Router, Request, Response, NextFunction } from 'express';
+import passportWithLocalStrategy from '../../passport/setupLocalStrategy';
 import respondWithUserData from './routeHandlerCallback';
 import IRequestWithUser from '../../shared/interfaces/IRequestWithUser';
 
@@ -9,7 +9,7 @@ const router = Router();
 // id, user_name, voipms_user_email, voipms_password_encrypted
 router.post(
   '/login',
-  passport.authenticate('local'),
+  passportWithLocalStrategy.authenticate('local'),
   respondWithUserData,
 );
 
@@ -17,8 +17,8 @@ router.post(
   204 response means user is logged int a session
   401 means not logged in.
 */
-router.get('/authCheck', passport.authenticate('local', (req: IRequestWithUser, res: Response) => {
+router.get('/authCheck', passportWithLocalStrategy.authenticate('local'), (req: Request, res: Response, next: NextFunction) => {
   res.status(204).send();
-}));
+});
 
 export default router;

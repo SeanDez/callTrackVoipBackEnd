@@ -7,6 +7,7 @@ import { Client as PgClient } from 'pg';
 import userPassLoginRouter from './login/byUserPass/router';
 import registerUserRouter from './registerNewUser/router';
 import accountDataRouter from './fetchAccountData/router';
+import passportLocalStrategy from './passport/setupLocalStrategy';
 
 import rootRouter from './rootRoute/router';
 import captureCallData from './captureCallData/router';
@@ -14,17 +15,6 @@ import captureCallData from './captureCallData/router';
 require('dotenv').config();
 
 const server = express();
-
-// passport.serializeUser(function(user, cb) {
-//   cb(null, user.id);
-// });
-
-// passport.deserializeUser(function(id, cb) {
-//   db.users.findById(id, function (err, user) {
-//     if (err) { return cb(err); }
-//     cb(null, user);
-//   });
-// });
 
 // called to set a cookie initially
 passport.serializeUser((user: any, callback) => {
