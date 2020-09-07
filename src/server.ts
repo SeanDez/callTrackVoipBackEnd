@@ -6,9 +6,10 @@ import passport from 'passport';
 import { Client as PgClient } from 'pg';
 import userPassLoginRouter from './login/byUserPass/router';
 import registerUserRouter from './registerNewUser/router';
+import accountDataRouter from './fetchAccountData/router';
 
 import rootRouter from './rootRoute/router';
-import fetchCallDataRouter from './captureCallData/router';
+import captureCallData from './captureCallData/router';
 
 require('dotenv').config();
 
@@ -51,8 +52,9 @@ server
   .use(passport.session())
   .use(rootRouter)
   .use(registerUserRouter)
-  .use(fetchCallDataRouter)
-  .use(userPassLoginRouter);
+  .use(accountDataRouter)
+  .use(userPassLoginRouter)
+  .use(captureCallData);
 
 console.log(`updated on ${new Date()}`);
 

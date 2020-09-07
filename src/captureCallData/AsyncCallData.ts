@@ -9,9 +9,10 @@ import dotenv from 'dotenv';
 import Cryptr from 'cryptr';
 import { optioned as pgOptioned, configured as pgConfigured } from '../shared/databaseConfig';
 import saveNewCallRecords from './helperFunctions/saveNewCallRecords';
-import extractDestinationPhoneNumbers from './helperFunctions/extractDestinationPhoneNumbers';
+import extractUniqueDestinations from './helperFunctions/extractDestinationPhoneNumbers';
 import ILocalLoginDetails from './interfaces/ILocalLoginDetails';
-import IRequestWithUser from './interfaces/IRequestWithUser';
+import IRequestWithUser from '../shared/interfaces/IRequestWithUser';
+import { AppUserIdAndVoipMsCredentialsEncrypted } from '../shared/interfaces/AppUserIdAndVoipMsCredentialsEncrypted';
 import isRequest from './helperFunctions/isRequest';
 import isRequestWIthUser from '../shared/interfaces/isRequestWithUser';
 import VoipMsProperties from './interfaces/VoipMsProperties';
@@ -44,10 +45,10 @@ export default class AsyncCallData {
 
   // --------------- Public Methods
 
-  public async initializeAsyncValues() {
+  public async initializeAsyncValues(): Promise<void> {
     if (typeof this.localUserId === 'undefined') {
       const {
-        id, password_hash, voipms_user_email, voipms_password_encrypted,
+        id, voipms_user_email, voipms_password_encrypted,
       } = await this.getUserInfo();
 
       this.localUserId = id;
@@ -58,17 +59,11 @@ export default class AsyncCallData {
 
   public async captureCallData(req: IRequestWithUser, res: Response): Promise<void> {
     const dbConnection = await pgConfigured.connect();
-
-    // it's an object
-    // callData.cdr is what i want
     const callData: CallRecord[] = await this.fetchCallData(req, res);
-
     await this.insertNewCampaignsForNewPhoneNumbers(
       pgConfigured, callData, this.localUserId!, this.voipms_username!,
     );
-
     await saveNewCallRecords(pgConfigured, callData);
-
     dbConnection.done();
   }
 
@@ -115,9 +110,9 @@ export default class AsyncCallData {
   */
   private async insertNewCampaignsForNewPhoneNumbers(
     pgPromiseConfigured: any, callData: CallRecord[], userId: string, userName: string,
-  ) {
-    const uniqueNumbers = extractDestinationPhoneNumbers(callData);
-    const campaignData = uniqueNumbers.map((phoneNumber: string) => ({
+  ): Promise<void> {
+    const uniqueNumbers = extractUniqueDestinations(callData);
+    const formattedCampaignData = uniqueNumbers.map((phoneNumber: string) => ({
       phoneNumber,
       status: 'active',
       app_user_id: this.localUserId,
@@ -125,7 +120,7 @@ export default class AsyncCallData {
     const campaignColumns = ['phoneNumber', 'status', 'app_user_id'];
     const campaignTable = { table: 'campaign' };
     const multiValueInsert = pgOptioned.helpers.insert(
-      campaignData, campaignColumns, campaignTable,
+      formattedCampaignData, campaignColumns, campaignTable,
     );
     const campaignQueryWithNoConflicts = `${multiValueInsert} ON CONFLICT DO NOTHING`;
 
@@ -136,7 +131,7 @@ export default class AsyncCallData {
     }
   }
 
-  private async getUserInfo() {
+  private async getUserInfo(): Promise<AppUserIdAndVoipMsCredentialsEncrypted> {
     try {
       const userInfo: string = await pgConfigured.one(
         'SELECT * FROM app_user WHERE user_name = $1',

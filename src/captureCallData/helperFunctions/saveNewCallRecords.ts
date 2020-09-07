@@ -1,12 +1,12 @@
-import { optioned } from '../../shared/databaseConfig';
+import { optioned as pgOptioned } from '../../shared/databaseConfig';
 import CallRecord from '../interfaces/CallRecord';
 import formatCallRecordsForPGPromise from './formatCallRecordsForPGPromise';
 
-async function saveNewCallRecords(db: any, callData: CallRecord[]) {
+async function saveNewCallRecords(db: any, callData: CallRecord[]): Promise<void> {
   const callDataFormattedForInsert = await formatCallRecordsForPGPromise(callData);
-  const callColumns = new optioned.helpers.ColumnSet(['unique_id', 'caller_id', 'date', 'description', 'account', 'disposition', 'seconds', 'campaign_id']);
+  const callColumns = new pgOptioned.helpers.ColumnSet(['unique_id', 'caller_id', 'date', 'description', 'account', 'disposition', 'seconds', 'campaign_id']);
   const callTable = 'call';
-  const callMultiInsertSegment = optioned.helpers.insert(
+  const callMultiInsertSegment = pgOptioned.helpers.insert(
     callDataFormattedForInsert, callColumns, callTable,
   );
   const conflictSegment = 'ON CONFLICT (unique_id) DO NOTHING';

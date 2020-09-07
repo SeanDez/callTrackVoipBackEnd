@@ -1,16 +1,18 @@
 import { Router, Request, Response } from 'express';
+import passport from 'passport';
 import AsyncCallData from './AsyncCallData';
-import { configured } from '../shared/databaseConfig';
-import IRequestWithUser from '../shared/interfaces/isRequestWithUser';
 
 const router: Router = Router();
 
 // @ts-ignore
-router.post('/callData', async (req: IRequestWithUser, res: Response) => {
-  console.log('inside /callData');
+router.get('/newCampaignAndCallData', passport.authenticate('local'), async (req: IRequestWithUser, res: Response) => {
   const asyncCallData = new AsyncCallData(req, res);
-  await asyncCallData.initializeAsyncValues();
-  await asyncCallData.captureCallData(req, res);
+  try {
+    await asyncCallData.initializeAsyncValues();
+    await asyncCallData.captureCallData(req, res);
+  } catch (error) {
+    res.json({ errorName: error.name, message: error.message });
+  }
 });
 
 export default router;
