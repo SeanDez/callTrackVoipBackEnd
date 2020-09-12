@@ -5,9 +5,10 @@ import { configured as pgConfigured } from '../shared/databaseConfig';
 
 const router = Router();
 
-const selectAllCampaignsAndCalls: string = `SELECT * FROM campaign
+const selectAllCampaignsAndCalls: string = `SELECT *, campaign.id as campaign_id, call.id as call_id
+FROM campaign
 LEFT JOIN call 
-ON campaign.id = call.campaign_id
+ON campaign_id = call.campaign_id
 WHERE campaign.app_user_id = $1
 `;
 
@@ -22,6 +23,7 @@ router.get('/accountData', passport.authenticate('local'), async (req: IRequestW
 
   try {
     const campaignPlusCallData = await pgConfigured.manyOrNone(selectAllCampaignsAndCalls, userId);
+    console.log('campaignPlusCallData', campaignPlusCallData);
 
     res.json(campaignPlusCallData);
   } catch (error) {
