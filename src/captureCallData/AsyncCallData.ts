@@ -94,7 +94,7 @@ export default class AsyncCallData {
       const cdrData: CallRecord[] = voipMsData.cdr;
 
       if (response.ok) {
-        res.status(204).send();
+        res.status(200).send(cdrData);
       } else {
         throw new Error('fetchCallData, response.ok was falsy');
       }

@@ -26,7 +26,11 @@ async function useDatabaseToVerifyUserAndPassword(localUserName: string,
     const queryResult = await pgClient.query(selectUserQuery, [localUserName]);
     pgClient.end();
     const userData: UserMatch = queryResult.rows[0];
-
+    
+    if (typeof userData === 'undefined' || typeof userData.password_hash === 'undefined') {
+    return doneCallback(null, false);
+    }
+    
     const hashesMatch: boolean = await bcrypt.compare(localPassword, userData.password_hash);
 
     if (hashesMatch) {
