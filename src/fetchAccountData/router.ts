@@ -19,13 +19,14 @@ WHERE campaign.app_user_id = $1
 */
 // @ts-ignore
 router.get('/accountData', passport.authenticate('local'), async (req: IRequestWithUser, res: Response) => {
-  const { id: userId } = req.user!;
+  const { id: appUserId } = req.user!;
 
   try {
-    const campaignPlusCallData = await pgConfigured.manyOrNone(selectAllCampaignsAndCalls, userId);
+    const campaignPlusCallData = await pgConfigured
+      .manyOrNone(selectAllCampaignsAndCalls, appUserId);
     console.log('campaignPlusCallData', campaignPlusCallData);
 
-    res.json(campaignPlusCallData);
+    res.json({ data: campaignPlusCallData });
   } catch (error) {
     res.json({ errorName: error.name, message: error.message });
   }

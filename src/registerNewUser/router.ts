@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import router from '../login/byUserPass/router';
 import { configured as pgConfigured } from '../shared/databaseConfig';
 import IRegistrationRequestBody from './interfaces/IRegistrationRequestBody';
-import { has } from 'lodash';
 
 dotenv.config();
 

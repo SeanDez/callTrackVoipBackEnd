@@ -4,18 +4,13 @@ import 'isomorphic-fetch';
 import { Request, Response } from 'express';
 import moment from 'moment';
 import PGPromise from 'pg-promise';
-import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import Cryptr from 'cryptr';
 import { optioned as pgOptioned, configured as pgConfigured } from '../shared/databaseConfig';
 import saveNewCallRecords from './helperFunctions/saveNewCallRecords';
 import extractUniqueDestinations from './helperFunctions/extractDestinationPhoneNumbers';
-import ILocalLoginDetails from './interfaces/ILocalLoginDetails';
 import IRequestWithUser from '../shared/interfaces/IRequestWithUser';
 import { AppUserIdAndVoipMsCredentialsEncrypted } from '../shared/interfaces/AppUserIdAndVoipMsCredentialsEncrypted';
-import isRequest from './helperFunctions/isRequest';
-import isRequestWIthUser from '../shared/interfaces/isRequestWithUser';
-import VoipMsProperties from './interfaces/VoipMsProperties';
 import CallRecord from './interfaces/CallRecord';
 
 dotenv.config();
@@ -46,30 +41,39 @@ export default class AsyncCallData {
   // --------------- Public Methods
 
   public async initializeAsyncValues(): Promise<void> {
-    if (typeof this.localUserId === 'undefined') {
-      const {
-        id, voipms_user_email, voipms_password_encrypted,
-      } = await this.getUserInfo();
+    const {
+      id: app_user_id, voipms_user_email, voipms_password_encrypted,
+    } = await this.getUserInfo();
 
-      this.localUserId = id;
-      this.voipms_username = voipms_user_email;
-      this.voip_password_decrypted = cryptr.decrypt(voipms_password_encrypted);
-    }
+    this.localUserId = app_user_id;
+    this.voipms_username = voipms_user_email;
+    this.voip_password_decrypted = cryptr.decrypt(voipms_password_encrypted);
   }
 
   public async captureCallData(req: IRequestWithUser, res: Response): Promise<void> {
     const dbConnection = await pgConfigured.connect();
-    const callData: CallRecord[] = await this.fetchCallData(req, res);
-    await this.insertNewCampaignsForNewPhoneNumbers(
-      pgConfigured, callData, this.localUserId!, this.voipms_username!,
-    );
-    await saveNewCallRecords(pgConfigured, callData);
-    dbConnection.done();
+    const callData: CallRecord[] | undefined = await this.fetchCallData(req, res);
+
+    if (callData) {
+      try {
+        await this.insertNewCampaignsForNewPhoneNumbers(
+          pgConfigured, callData, this.localUserId!, this.voipms_username!,
+        );
+        await saveNewCallRecords(pgConfigured, callData);
+        dbConnection.done();
+      } catch (error) {
+        res.json({ errorName: error.name, message: error.message });
+      }
+    }
   }
 
   // --------------- Internal Methods
 
-  private async fetchCallData(input: IRequestWithUser, res: Response) {
+  /*
+    Fetches an array of call data records
+  */
+  private async fetchCallData(input: IRequestWithUser, res: Response)
+  : Promise<CallRecord[] | undefined> {
     const apiMethod = 'getCDR';
     const startDate = moment().subtract(90, 'days').format('YYYY[-]MM[-]DD');
     const endDate = moment().format('YYYY[-]MM[-]DD'); // now
@@ -94,14 +98,12 @@ export default class AsyncCallData {
       const cdrData: CallRecord[] = voipMsData.cdr;
 
       if (response.ok) {
-        res.status(204).send();
-      } else {
-        throw new Error('fetchCallData, response.ok was falsy');
+        return cdrData;
       }
 
-      return cdrData;
+      res.json({ message: 'fetchCallData, response.ok was falsy' });
     } catch (error) {
-      throw new Error(error);
+      res.json({ errorName: error.name, message: error.message });
     }
   }
 

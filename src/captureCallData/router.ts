@@ -10,6 +10,7 @@ router.get('/newCampaignAndCallData', passport.authenticate('local'), async (req
   try {
     await asyncCallData.initializeAsyncValues();
     await asyncCallData.captureCallData(req, res);
+    res.status(204).send();
   } catch (error) {
     res.json({ errorName: error.name, message: error.message });
   }
