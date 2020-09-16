@@ -72,6 +72,7 @@ export default class AsyncCallData {
   /*
     Fetches an array of call data records
   */
+  // eslint-disable-next-line consistent-return
   private async fetchCallData(input: IRequestWithUser, res: Response)
   : Promise<CallRecord[] | undefined> {
     const apiMethod = 'getCDR';
