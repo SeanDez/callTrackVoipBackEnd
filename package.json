@@ -17,6 +17,8 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.0.0",
+    "connect-redis": "^5.0.0",
+    "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "cron": "^1.8.2",
     "cryptr": "^6.0.2",
@@ -34,10 +36,12 @@
     "pg": "^8.3.0",
     "pg-format": "^1.0.4",
     "pg-promise": "^10.5.8",
+    "redis": "^3.0.2",
     "typescript": "^3.9.7"
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
+    "@types/cookie-parser": "^1.4.2",
     "@types/cors": "^2.8.7",
     "@types/cron": "^1.7.2",
     "@types/cryptr": "^4.0.1",

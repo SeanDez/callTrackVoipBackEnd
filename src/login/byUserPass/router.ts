@@ -17,8 +17,29 @@ router.post(
   204 response means user is logged int a session
   401 means not logged in.
 */
-router.get('/authCheck', passportWithLocalStrategy.authenticate('local'), (req: Request, res: Response, next: NextFunction) => {
+router.get('/authCheck', (req: Request, res: Response, next: NextFunction) => {
+  const hasValidSession = req.isAuthenticated();
+  console.log('req.session', req.session);
+  console.log('session.id', req.session!.id);
+  console.log('sessionID', req.sessionID);
+
+  console.log('hasValidSession: ', hasValidSession);
+
   res.status(204).send();
+});
+
+/*
+  checks for cookies without having to pass authentication first
+*/
+router.get('/cookieCheck', (req: Request, res: Response) => {
+  console.log('Cookies: ', req.cookies);
+  console.log('Session', req.session);
+
+  res.status(200).json({
+    cookies: req.cookies,
+    session: req.session,
+    sessionID: req.sessionID,
+  });
 });
 
 export default router;

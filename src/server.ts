@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 import express, { Request, Response } from 'express';
 import expressSession from 'express-session';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import passport from 'passport';
 import { Client as PgClient } from 'pg';
@@ -34,10 +35,16 @@ passport.deserializeUser(async (userId: string, callback) => {
   }
 });
 
+const expressSessionOptions = { 
+  secret: process.env.SESSION_SECRET!,
+  resave: true,
+};
+
 server
   .use(cors())
   .use(express.json()) // populates req.body
-  .use(expressSession({ secret: process.env.SESSION_SECRET! }))
+  .use(cookieParser())
+  .use(expressSession(expressSessionOptions))
   .use(passport.initialize())
   .use(passport.session())
   .use(rootRouter)
