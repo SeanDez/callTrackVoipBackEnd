@@ -14,7 +14,7 @@ router.post(
 );
 
 /*
-  204 response means user is logged int a session
+  204 response means user is logged into a valid session
   401 means not logged in.
 */
 router.get('/authCheck', (req: Request, res: Response, next: NextFunction) => {
@@ -25,7 +25,11 @@ router.get('/authCheck', (req: Request, res: Response, next: NextFunction) => {
 
   console.log('hasValidSession: ', hasValidSession);
 
-  res.status(204).send();
+  if (hasValidSession) {
+    res.status(204).send();
+  }
+
+  res.status(401).send();
 });
 
 /*

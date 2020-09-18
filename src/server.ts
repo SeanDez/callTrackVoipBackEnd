@@ -37,7 +37,7 @@ passport.deserializeUser(async (userId: string, callback) => {
 
 const expressSessionOptions = { 
   secret: process.env.SESSION_SECRET!,
-  resave: true,
+  resave: false,
 };
 
 server
